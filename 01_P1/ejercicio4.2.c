@@ -22,6 +22,5 @@ int main (void){
   }
 
   wait(NULL);
-  while(1);
   exit(EXIT_SUCCESS);
 }
