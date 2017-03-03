@@ -1,13 +1,14 @@
 /**
  * @brief Sistemas Operativos: Practica 1, ejercicio 6
  *
+ * Grupo 2201, Pareja 10.
  * En este modulo se ha implementado el codigo del sexto ejercicio de la primera practica,
  * referente al estudio de las consecuencias e implicaciones de la creacion de procesos hijos,
  * en este caso en lo relacionado a recursos.
  *
  * @file ejercicio6.c
- * @author Blanca Martín
- * @author Fernando Villar
+ * @author Blanca Martín (blanca.martins@estudiante.uam.es)
+ * @author Fernando Villar (fernando.villarg@estudiante.uam.es)
  * @date 01-03-2017
  */
 
@@ -23,7 +24,7 @@
 /**
  * @brief funcion main del ejercicio6
  *
- * Este programa reserva memoria para una cadena de caracteres y efectua un fork() 
+ * Este programa reserva memoria para una cadena de caracteres y efectua un fork()
  * a continuacion. EL proceso hijo escribe un valor en la cadena pasado por pantalla.
  * @return EXIT_SUCCESS si se han realizado correctamente todas las tareas, EXIT_FAILURE si
  * se ha producido algun error al ejecutar la instruccion fork() o en la reserva

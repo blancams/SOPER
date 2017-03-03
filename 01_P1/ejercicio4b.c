@@ -1,12 +1,13 @@
 /**
  * @brief Sistemas Operativos: Practica 1, ejercicio 4b
  *
+ * Grupo 2201, Pareja 10.
  * En este modulo se ha implementado el codigo del cuarto (a) ejercicio de la primera practica,
  * referente al uso de del fork(), wait() y a los procesos huerfanos.
  *
  * @file ejercicio4b.c
- * @author Blanca Martín
- * @author Fernando Villar
+ * @author Blanca Martín (blanca.martins@estudiante.uam.es)
+ * @author Fernando Villar (fernando.villarg@estudiante.uam.es)
  * @date 01-03-2017
  */
 

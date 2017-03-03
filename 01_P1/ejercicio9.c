@@ -1,13 +1,14 @@
 /**
  * @brief Sistemas Operativos: Practica 1, ejercicio 9
  *
+ * Grupo 2201, Pareja 10.
  * En este modulo se ha implementado el codigo del noveno ejercicio de la primera practica,
  * referente al uso de la funcion "pipe" para la creacion de tuberias a modo de comunicacion
  * entre procesos padres e hijos.
  *
  * @file ejercicio9.c
- * @author Blanca Martín
- * @author Fernando Villar
+ * @author Blanca Martín (blanca.martins@estudiante.uam.es)
+ * @author Fernando Villar (fernando.villarg@estudiante.uam.es)
  * @date 01-03-2017
  */
 
@@ -25,7 +26,7 @@
 /**
  * @brief funcion main del ejercicio9
  *
- * Este programa genera un conjunto de procesos (NUM_PROC) hijos que realizan cuatro 
+ * Este programa genera un conjunto de procesos (NUM_PROC) hijos que realizan cuatro
  * operaciones distintas: suma, resta, multiplicacion y division, acorde con su orden
  * de creacion. La comunicion entre padre e hijos se realiza a traves de una tuberia
  * por medio de la cual el padre pasa dos operandos al proceso hijo e imprime el resultado
@@ -96,4 +97,3 @@ int main (void){
    }
    exit(EXIT_SUCCESS);
 }
-  

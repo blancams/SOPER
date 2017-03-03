@@ -1,13 +1,14 @@
 /**
  * @brief Sistemas Operativos: Practica 1, ejercicio 8
  *
+ * Grupo 2201, Pareja 10.
  * En este modulo se ha implementado el codigo del octavo ejercicio de la primera practica,
  * referente al uso de las funciones "exe" para ejecutar comandos en terminal a traves de
  * procesos hijo.
  *
  * @file ejercicio8.c
- * @author Blanca Martín
- * @author Fernando Villar
+ * @author Blanca Martín (blanca.martins@estudiante.uam.es)
+ * @author Fernando Villar (fernando.villarg@estudiante.uam.es)
  * @date 01-03-2017
  */
 

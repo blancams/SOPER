@@ -1,13 +1,14 @@
 /**
  * @brief Sistemas Operativos: Practica 1, ejercicio 5a
  *
+ * Grupo 2201, Pareja 10.
  * En este modulo se ha implementado el codigo del quinto ejercicio (a) de la primera practica,
  * referente al uso de la funcion "fork" para la creacion de conjuntos de procesos de forma
  * secuencial o paralela.
  *
  * @file ejercicio5a.c
- * @author Blanca Martín
- * @author Fernando Villar
+ * @author Blanca Martín (blanca.martins@estudiante.uam.es)
+ * @author Fernando Villar (fernando.villarg@estudiante.uam.es)
  * @date 01-03-2017
  */
 
