@@ -47,7 +47,12 @@ int main (void){
     } else{
       close(fd1[0]);
       close(fd2[1]);
-      write(fd1[1], "5,6 ", 4);
+      if(i==0){
+        printf("Introduce dos números: ");
+        scanf("%d %d", &op1, &op2);
+      }
+      sprintf(buf, "%d,%d", op1, op2);
+      write(fd1[1], buf, strlen(buf)+1);
       read(fd2[0], buf, sizeof(buf));
       printf("%s", buf);
       waitpid(pid, NULL, 0);
