@@ -17,7 +17,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <string.h>
 
 #define NUM_PROC 3 /*!< Numero de hijos a crear */
 

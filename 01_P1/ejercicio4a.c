@@ -16,7 +16,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <string.h>
 
 #define NUM_PROC 3   /*!< Numero de iteraciones del bucle que genera procesos */
 #define MAX_CHAR 128 /*!< Maximo de caracteres para strings */

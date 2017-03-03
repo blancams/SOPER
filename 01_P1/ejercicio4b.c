@@ -16,7 +16,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <string.h>
 #include <errno.h>
 
 #define NUM_PROC 3   /*!< Numero de iteraciones del bucle que genera procesos */

@@ -17,7 +17,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <string.h>
 
 #define STRING_L 80 /*!< Longitud maxima de la cadena de caracteres */
 
