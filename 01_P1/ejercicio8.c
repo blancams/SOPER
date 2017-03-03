@@ -34,10 +34,10 @@
  * o al ejecutar la funcion fork().
  */
 int main (int argc, char** argv) {
-    int i;
-    pid_t pid;
-    char **argp;
-    char path[MAX_CHAR];
+   int i;
+   pid_t pid;
+   char **argp;
+   char path[MAX_CHAR];
 
    /* Comprobacion de los parametros de entrada */
    if (argc < 2) {
@@ -52,11 +52,15 @@ int main (int argc, char** argv) {
    /* Se crean dos arrays de strings para introducir en la primera posicion
    el comando y en la segunda NULL */
    argp = malloc(LENGTH_INS * sizeof(char*));
-   if (argp == NULL) exit(EXIT_FAILURE);
+   if (argp == NULL){
+      exit(EXIT_FAILURE);
+   }
 
    for (i = 0; i < LENGTH_INS; i++) {
       argp[i] = (char*) malloc(MAX_CHAR);
-      if (argp[i] == NULL) exit(EXIT_FAILURE);
+      if (argp[i] == NULL){
+         exit(EXIT_FAILURE);
+      }
    }
 
    for (i = 1; i < (argc-1); i++) {
@@ -109,5 +113,4 @@ int main (int argc, char** argv) {
    free(argp);
 
    exit(EXIT_SUCCESS);
-
 }
