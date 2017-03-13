@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -46,7 +45,7 @@ int main(int argc, char *argv[]){
 	printf("Tiempo empleado: %ld usecs.\n", (after.tv_sec - before.tv_sec)*(10^6) + (after.tv_usec - before.tv_usec));
 
 	exit(EXIT_SUCCESS);
-	
+
 }
 
 int isPrime(int n){
@@ -58,4 +57,3 @@ int isPrime(int n){
 	}
 	return 1;
 }
-

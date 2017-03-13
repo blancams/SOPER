@@ -26,7 +26,7 @@ int main(){
 	struct param p1, p2;
 
 	printf("Introduzca dimensión de la matriz cuadrada:\n");
-	scanf("%d", &n);	
+	scanf("%d", &n);
 	if(n > 4){
 		printf("La dimensión de la matriz no puede exceder de 4.\n");
 		exit(EXIT_FAILURE);
@@ -62,7 +62,7 @@ int main(){
 	p2.h = &p1;
 
 	pthread_create(&h1, NULL, mult_matrices, (void *) &p1);
-	pthread_create(&h2, NULL, mult_matrices, (void *) &p2);	
+	pthread_create(&h2, NULL, mult_matrices, (void *) &p2);
 
 	pthread_join(h1, NULL);
 	pthread_join(h2, NULL);
@@ -86,4 +86,6 @@ void *mult_matrices(void *parametros){
 		p->fila++;
 		usleep(100000);
 	}
+
+	return parametros;
 }
