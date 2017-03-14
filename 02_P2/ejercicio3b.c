@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#define MAX_HILOS 2
+#define MAX_HILOS 100
 
 int isPrime(int n);
 void *primos(void * n);
@@ -15,7 +15,7 @@ void *primos(void * n);
 int main(int argc, char *argv[]){
 	int n, i;
 	struct timeval before, after;
-	pthread_t h;
+	pthread_t h[MAX_HILOS];
 
 	if(argc < 2){
 		printf("Se debe pasar el número de primos como argumento.\n");
@@ -27,8 +27,8 @@ int main(int argc, char *argv[]){
 	gettimeofday(&before, NULL);
 
 	for(i = 0; i < MAX_HILOS; i++){
-		pthread_create(&h, NULL, primos, (void *) &n);
-		pthread_join(h, NULL);
+		pthread_create(&h[i], NULL, primos, (void *) &n);
+		pthread_join(h[i], NULL);
 	}
 
 	gettimeofday(&after, NULL);
