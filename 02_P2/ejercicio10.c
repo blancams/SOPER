@@ -21,7 +21,7 @@
 
 #define NUM_WRD 13      /*!< Numero de palabras de la frase */
 #define MAX_CHAR 10     /*!< Maximo de caracteres para palabras de la frase */
-#define NUM_STR 15      /*!< Numero de palabras que lee el proceso B */
+#define NUM_STR 50      /*!< Numero de palabras que lee el proceso B */
 #define SENTENCE {"EL", "PROCESO", "A", "ESCRIBE", "EN", "UN", "FICHERO", "HASTA", "QUE", "LEE", "LA", "CADENA", "FIN"} /*!< Frase */
 
 /**
