@@ -2,8 +2,8 @@
  * @brief Sistemas Operativos: Practica 2, ejercicio 3a
  *
  * Grupo 2201, Pareja 10.
- * En este modulo se ha implementado el codigo del primer apartado del tercer 
- * ejercicio de la segunda practica, que consiste en la comparacion de 
+ * En este modulo se ha implementado el codigo del primer apartado del tercer
+ * ejercicio de la segunda practica, que consiste en la comparacion de
  * tiempos entre hilos y procesos.
  *
  * @file ejercicio3a.c
@@ -27,7 +27,7 @@
  * @param n, entero que se quiere comprobar.
  * @return 0 si el numero no es primo, 1 si el numero es primo.
  */
-int isPrime(int n);
+int isPrime (int n);
 
 /**
  * @brief Funcion main del ejercicio3a
@@ -35,7 +35,7 @@ int isPrime(int n);
  * El programa consiste en la creacion de 100 procesos hijos en serie, cada uno
  * de los cuales calculara N numeros primos. El proceso
  * padre esperara a cada uno de sus hijos, y una vez hayan finalizado
- * todos los hijos se imprimira por pantalla el tiempo total empleado en 
+ * todos los hijos se imprimira por pantalla el tiempo total empleado en
  * todos los calculos.
  *
  * @param argc, numero de argumentos
@@ -44,17 +44,16 @@ int isPrime(int n);
  * se ha producido algun error al introducir los argumentos de entrada
  * o al ejecutar la funcion fork().
  */
-int main(int argc, char *argv[]){
-	int n;
-	int pid;
-	int i, count;
+int main (int argc, char *argv[]) {
+   int n, pid, i, count;
 	struct timeval before, after;
 
  	/* Comprobación de los argumentos de entrada */
-	if(argc < 2){
-		printf("Se debe pasar el número de primos como argumento.\n");
+	if(argc != 2){
+		printf("Se debe pasar el número de primos como único argumento.\n");
 		exit(EXIT_FAILURE);
 	}
+
 	n = atoi(argv[1]);
 
 	/* Tiempo inicial */
@@ -87,15 +86,20 @@ int main(int argc, char *argv[]){
 
 }
 
-int isPrime(int n){
+int isPrime (int n) {
 	int j;
-	if(n == 2){
+
+	if (n <= 1) {
+		return 0;
+	} else if (n == 2) {
 		return 1;
 	}
-	for(j = 2; j*j <= n; j++){
-		if(n%j == 0){
+
+	for (j = 2; j*j <= n; j++) {
+		if (n%j == 0) {
 			return 0;
 		}
 	}
+
 	return 1;
 }
