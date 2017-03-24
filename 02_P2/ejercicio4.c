@@ -123,11 +123,23 @@ int main() {
 	printf("Realizando producto:\n");
 
 	/* Creacion de los hilos */
-	pthread_create(&h1, NULL, mult_matrices, (void *) &p1);
-	pthread_create(&h2, NULL, mult_matrices, (void *) &p2);
+	if (pthread_create(&h1, NULL, mult_matrices, (void *) &p1)) {
+		printf("Error al crear el hilo.\n");
+		exit(EXIT_FAILURE);
+	}
+	if (pthread_create(&h2, NULL, mult_matrices, (void *) &p2)) {
+		printf("Error al crear el hilo.\n");
+		exit(EXIT_FAILURE);
+	}
 
-	pthread_join(h1, NULL);
-	pthread_join(h2, NULL);
+	if (pthread_join(h1, NULL)) {
+		printf("Error al esperar al hilo.\n");
+		exit(EXIT_FAILURE);
+	}
+	if (pthread_join(h2, NULL)) {
+		printf("Error al esperar al hilo.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	/* Liberacion de recursos */
 	free(matrix1);

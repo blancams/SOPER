@@ -27,7 +27,7 @@
  * @param n, entero que se quiere comprobar.
  * @return 0 si el numero no es primo, 1 si el numero es primo.
  */
-int isPrime (int n);
+int is_prime (int n);
 
 /**
  * @brief Funcion main del ejercicio3a
@@ -66,7 +66,7 @@ int main (int argc, char *argv[]) {
 		} else if(!pid){
 			/* Cada hijo calcula los n primos */
 			for(i = 2, count = 0; count < n; i++){
-				if (isPrime(i) == 1){
+				if (is_prime(i) == 1){
 					count++;
 				}
 			}
@@ -86,7 +86,7 @@ int main (int argc, char *argv[]) {
 
 }
 
-int isPrime (int n) {
+int is_prime (int n) {
 	int j;
 
 	if (n <= 1) {

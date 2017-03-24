@@ -28,7 +28,7 @@
  * @param n, entero que se quiere comprobar.
  * @return 0 si el numero no es primo, 1 si el numero es primo.
  */
-int isPrime (int n);
+int is_prime (int n);
 
 /**
  * @brief Calcula los primeros n primos.
@@ -72,8 +72,14 @@ int main (int argc, char *argv[]) {
 
 	/* Creacion de los hilos */
 	for (i = 0; i < MAX_HILOS; i++) {
-		pthread_create(&h[i], NULL, primos, (void *) &n);
-		pthread_join(h[i], NULL);
+		if (pthread_create(&h[i], NULL, primos, (void *) &n)) {
+			printf("Error al crear el hilo.\n");
+			exit(EXIT_FAILURE);
+		}
+		if (pthread_join(h[i], NULL)) {
+			printf("Error al esperar al hilo.\n");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	/* Tiempo final */
@@ -85,7 +91,7 @@ int main (int argc, char *argv[]) {
 
 }
 
-int isPrime (int n) {
+int is_prime (int n) {
 	int j;
 
 	if (n <= 1) {
@@ -108,7 +114,7 @@ void *primos(void * n){
 	int num = *((int *) n);
 
 	for (i = 2, count = 0; count < num; i++) {
-		if (isPrime(i) == 1) {
+		if (is_prime(i) == 1) {
 			count++;
 		}
 	}

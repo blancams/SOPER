@@ -79,8 +79,14 @@ int main(int argc, char *argv[]){
 	}
 
 	/* Asignacion de los manejadores */
-	signal(SIGTERM, &manejador);
-   signal(SIGUSR1, &manejador);
+	if (signal(SIGTERM, &manejador) == SIG_ERR) {
+		printf("Error al crear el manejador.\n");
+      exit(EXIT_FAILURE);
+	}
+   if (signal(SIGUSR1, &manejador) == SIG_ERR) {
+		printf("Error al crear el manejador.\n");
+      exit(EXIT_FAILURE);
+	}
 
    /* Lectura del numero de procesos y el numero de vueltas */
    n = atoi(argv[1]);
@@ -106,7 +112,10 @@ int main(int argc, char *argv[]){
 			de otra señal y mandara una SIGTERM a su hijo. Cuando el
 			la reciba, acabara */
 			if(i == 0){
-				signal(SIGUSR1, &manejador2);
+				if (signal(SIGUSR1, &manejador2) == SIG_ERR) {
+					printf("Error al crear el manejador.\n");
+			      exit(EXIT_FAILURE);
+				}
 				pause();
 				sleep(1);
 				kill(pid, SIGTERM);
