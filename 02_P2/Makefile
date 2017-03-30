@@ -1,6 +1,6 @@
 CC = gcc -std=gnu99
 CFLAGS = -Wall
-EXE = ejercicio2 ejercicio3a ejercicio3b ejercicio4 ejercicio6
+EXE = ejercicio2 ejercicio3a ejercicio3b ejercicio4 ejercicio6 ejercicio8
 
 all: $(EXE)
 
