@@ -1,22 +1,21 @@
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h> 
+#include <sys/types.h>
 #include <sys/ipc.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/shm.h> 
+#include <sys/shm.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
 
 #define MAX_CHAR 80
-#define FILEKEY "/bin/cat" 
+#define FILEKEY "/bin/cat"
 #define KEY 1301
 
-struct info{ 
-   char nombre[MAX_CHAR]; 
-   int id; 
+struct info {
+   char nombre[MAX_CHAR];
+   int id;
 };
 
 void manejador(int sig);
@@ -50,15 +49,13 @@ int main(int argc, char *argv[]){
       printf("Error en la asignacion del manejador.\n");
       exit(EXIT_FAILURE);
    }
-   
+
    for(i = 0; i < n; i++){
       if((pid = fork()) == -1){
          printf("Error al hacer el fork.\n");
          exit(EXIT_FAILURE);
       } else if(!pid){
          break;
-      } else{
-         ;
       }
    }
 
@@ -69,6 +66,7 @@ int main(int argc, char *argv[]){
    }
 
    if(pid){
+      mens->id = 0;
       for(i = 0; i < n; i++){
          if(pause() != -1){
             printf("Error al hacer el pause.\n");
@@ -83,6 +81,7 @@ int main(int argc, char *argv[]){
       shmdt((char *) mens);
       shmctl(id, IPC_RMID, (struct shmid_ds *) NULL);
    } else if(!pid){
+      srand(pid);
       sleep(num_aleatorio(i,10));
       printf("\nIntroduzca el nombre de un cliente: \n");
       scanf("%s", mens->nombre);
@@ -92,7 +91,7 @@ int main(int argc, char *argv[]){
          printf("Error en el envio de señal SIGUSR1.\n");
          exit(EXIT_FAILURE);
       }
-      
+
    }
    exit(EXIT_SUCCESS);
 }
