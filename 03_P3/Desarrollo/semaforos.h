@@ -4,6 +4,12 @@
 #define OK 2
 #define ERROR -1
 
+union semun {
+	int val;
+	struct semid_ds *semstat;
+	unsigned short *array;
+};
+
 /***************************************************************
      Nombre:
           Inicializar_Semaforo.

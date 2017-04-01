@@ -8,12 +8,6 @@
 
 #include "semaforos.h"
 
-union semun {
-	int val;
-	struct semid_ds *semstat;
-	unsigned short *array;
-};
-
 int Inicializar_Semaforo(int semid, unsigned short *array) {
 	union semun arg;
 	arg.array = array;
