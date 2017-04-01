@@ -1,7 +1,7 @@
 CC = gcc -std=gnu99
 CFLAGS = -Wall
 _EXE1 = ejercicio2 ejercicio3
-_EXE2 = ejercicio5
+_EXE2 = ejercicio5 ejercicio6
 DIR1 = ej_2_3
 DIR2 = ej_5_6
 EXE1 = $(patsubst %, $(DIR1)/%, $(_EXE1))

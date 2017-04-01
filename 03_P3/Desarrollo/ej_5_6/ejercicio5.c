@@ -115,5 +115,8 @@ int main(void) {
 
    printf("Borrado correcto.\n");
 
+   free(active);
+   free(arg.array);
+
    exit(EXIT_SUCCESS);
 }
