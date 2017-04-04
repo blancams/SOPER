@@ -59,7 +59,7 @@ int Crear_Semaforo(key_t key, int size, int *semid);
      Salida:
        int: OK si todo fue correcto, ERROR en caso de error.
 ***************************************************************/
-int Down_Semaforo(int id, int num_sem, int undo);
+int Down_Semaforo(int id, int num_sem, short undo);
 
 /***************************************************************
      Nombre: DownMultiple_Semaforo
@@ -73,7 +73,7 @@ int Down_Semaforo(int id, int num_sem, int undo);
      Salida:
           int: OK si todo fue correcto, ERROR en caso de error.
 ***************************************************************/
-int DownMultiple_Semaforo(int id,int size,int undo,int *active);
+int DownMultiple_Semaforo(int id,int size,short undo,int *active);
 
 /**************************************************************
      Nombre:Up_Semaforo
@@ -85,7 +85,7 @@ int DownMultiple_Semaforo(int id,int size,int undo,int *active);
      Salida:
        int: OK si todo fue correcto, ERROR en caso de error.
 ***************************************************************/
-int Up_Semaforo(int id, int num_sem, int undo);
+int Up_Semaforo(int id, int num_sem, short undo);
 
 /***************************************************************
      Nombre: UpMultiple_Semaforo
@@ -98,6 +98,6 @@ int Up_Semaforo(int id, int num_sem, int undo);
      Salida:
           int: OK si todo fue correcto, ERROR en caso de error.
 ***************************************************************/
-int UpMultiple_Semaforo(int id,int size, int undo, int *active);
+int UpMultiple_Semaforo(int id,int size, short undo, int *active);
 
 #endif
