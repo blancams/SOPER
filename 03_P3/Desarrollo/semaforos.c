@@ -11,7 +11,7 @@
 int Inicializar_Semaforo(int semid, unsigned short *array) {
 	union semun arg;
 	arg.array = array;
-	if(semctl (semid, sizeof(array)/sizeof(array[0]), SETALL, arg) == -1){
+	if(semctl (semid, 0, SETALL, arg) == -1){
       return ERROR;
    }
    return OK;
