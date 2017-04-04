@@ -192,13 +192,17 @@ int main(void) {
 
 int productor(int semid, struct buff *buffer) {
    while (buffer->limite) {
+<<<<<<< HEAD
       /* Acceso controlado a la region de memoria compartida */
       if (Down_Semaforo(semid, 2, 1) == -1) {
+=======
+      if (Down_Semaforo(semid, 2, 0) == -1) {
+>>>>>>> ebb472873fef906ba3a9ee9753e121c81ca779ba
          printf("Error al ejecutar función Down_Semaforo.\n");
          return ERROR;
       }
 
-      if (Down_Semaforo(semid, 0, 1) == -1) {
+      if (Down_Semaforo(semid, 0, 0) == -1) {
          printf("Error al ejecutar función Down_Semaforo.\n");
          return ERROR;
       }
@@ -207,13 +211,17 @@ int productor(int semid, struct buff *buffer) {
       buffer->buffer[buffer->n_char] = 97 + buffer->n_char;
       buffer->n_char++;
 
+<<<<<<< HEAD
       /* Fin del uso de la memoria compartida */
       if (Up_Semaforo(semid, 1, 1) == -1) {
+=======
+      if (Up_Semaforo(semid, 1, 0) == -1) {
+>>>>>>> ebb472873fef906ba3a9ee9753e121c81ca779ba
          printf("Error al ejecutar función Up_Semaforo.\n");
          return ERROR;
       }
 
-      if (Up_Semaforo(semid, 0, 1) == -1) {
+      if (Up_Semaforo(semid, 0, 0) == -1) {
          printf("Error al ejecutar función Up_Semaforo.\n");
          return ERROR;
       }
@@ -231,13 +239,17 @@ int productor(int semid, struct buff *buffer) {
 
 int consumidor(int semid, struct buff *buffer) {
    while(buffer->limite) {
+<<<<<<< HEAD
       /* Acceso controlado a la region de memoria compartida */
       if (Down_Semaforo(semid, 1, 1) == -1) {
+=======
+      if (Down_Semaforo(semid, 1, 0) == -1) {
+>>>>>>> ebb472873fef906ba3a9ee9753e121c81ca779ba
          printf("Error al ejecutar función Down_Semaforo.\n");
          return ERROR;
       }
 
-      if (Down_Semaforo(semid, 0, 1) == -1) {
+      if (Down_Semaforo(semid, 0, 0) == -1) {
          printf("Error al ejecutar función Down_Semaforo.\n");
          return ERROR;
       }
@@ -246,13 +258,17 @@ int consumidor(int semid, struct buff *buffer) {
       buffer->n_char--;
       printf("Carácter leído: %c\n", buffer->buffer[buffer->n_char]);
 
+<<<<<<< HEAD
       /* Fin del uso de la memoria compartida */
       if (Up_Semaforo(semid, 2, 1) == -1) {
+=======
+      if (Up_Semaforo(semid, 2, 0) == -1) {
+>>>>>>> ebb472873fef906ba3a9ee9753e121c81ca779ba
          printf("Error al ejecutar función Up_Semaforo.\n");
          return ERROR;
       }
 
-      if (Up_Semaforo(semid, 0, 1) == -1) {
+      if (Up_Semaforo(semid, 0, 0) == -1) {
          printf("Error al ejecutar función Up_Semaforo.\n");
          return ERROR;
       }

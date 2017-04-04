@@ -51,7 +51,7 @@ int Crear_Semaforo(key_t key, int size, int *semid) {
    return OK;
 }
 
-int Down_Semaforo(int id, int num_sem, int undo) {
+int Down_Semaforo(int id, int num_sem, short undo) {
    struct sembuf down;
    down.sem_num = num_sem;
    down.sem_op = -1;
@@ -64,7 +64,7 @@ int Down_Semaforo(int id, int num_sem, int undo) {
    return OK;
 }
 
-int DownMultiple_Semaforo(int id, int size, int undo, int *active) {
+int DownMultiple_Semaforo(int id, int size, short undo, int *active) {
    int i;
    for(i = 0; i < size; i++) {
       if(Down_Semaforo(id, active[i], undo) == ERROR) {
@@ -74,7 +74,7 @@ int DownMultiple_Semaforo(int id, int size, int undo, int *active) {
    return OK;
 }
 
-int Up_Semaforo(int id, int num_sem, int undo) {
+int Up_Semaforo(int id, int num_sem, short undo) {
    struct sembuf up;
    up.sem_num = num_sem;
    up.sem_op = 1;
@@ -87,7 +87,7 @@ int Up_Semaforo(int id, int num_sem, int undo) {
    return OK;
 }
 
-int UpMultiple_Semaforo(int id,int size, int undo, int *active) {
+int UpMultiple_Semaforo(int id,int size, short undo, int *active) {
    int i;
    for(i = 0; i < size; i++) {
       if(Up_Semaforo(id, active[i], undo) == ERROR) {
