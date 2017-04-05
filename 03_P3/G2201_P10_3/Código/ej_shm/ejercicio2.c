@@ -82,7 +82,7 @@ int main(int argc, char *argv[]){
    int pid;
    struct info *mens;
 
-   /* Lectura del numero de procesos a crear */
+   /* Lectura del numero de procesos a crear con comprobacion de argumentos */
    if(argc != 2){
       printf("Fallo en el número de argumentos de entrada.\n");
       exit(EXIT_FAILURE);
