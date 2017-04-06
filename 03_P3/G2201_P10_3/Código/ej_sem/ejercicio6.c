@@ -210,12 +210,12 @@ int productor(int semid, struct buff *buffer) {
       buffer->n_char++;
 
       /* Fin del uso de la memoria compartida */
-      if (Up_Semaforo(semid, 1, 1) == -1) {
+      if (Up_Semaforo(semid, 0, 0) == -1) {
          printf("Error al ejecutar función Up_Semaforo.\n");
          return ERROR;
       }
 
-      if (Up_Semaforo(semid, 0, 0) == -1) {
+      if (Up_Semaforo(semid, 1, 1) == -1) {
          printf("Error al ejecutar función Up_Semaforo.\n");
          return ERROR;
       }
@@ -249,12 +249,12 @@ int consumidor(int semid, struct buff *buffer) {
       printf("Carácter leído: %c\n", buffer->buffer[buffer->n_char]);
 
       /* Fin del uso de la memoria compartida */
-      if (Up_Semaforo(semid, 2, 1) == -1) {
+      if (Up_Semaforo(semid, 0, 0) == -1) {
          printf("Error al ejecutar función Up_Semaforo.\n");
          return ERROR;
       }
 
-      if (Up_Semaforo(semid, 0, 0) == -1) {
+      if (Up_Semaforo(semid, 2, 1) == -1) {
          printf("Error al ejecutar función Up_Semaforo.\n");
          return ERROR;
       }
