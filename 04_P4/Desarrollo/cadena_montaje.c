@@ -21,6 +21,7 @@ typedef struct _Mensaje{
    long tipo;
    char mtext[MAX_CHAR];
    int lastSize;
+   int fin;
 }mensaje;	
 
 int main(int argc, char *argv[]){
@@ -30,6 +31,8 @@ int main(int argc, char *argv[]){
    key_t clave;
    int msqid;
    mensaje msg;
+
+   msg.fin = 0;
 
    if(argc != 3){
       printf("Error en los argumentos de entrada.\n");
@@ -78,7 +81,7 @@ int main(int argc, char *argv[]){
          }
       }
       msg.tipo = 1;
-      strcpy(msg.mtext, "FIN");
+      msg.fin = 1;
       sleep(1);
       if (msgsnd(msqid, &msg, sizeof(mensaje) - sizeof(long), 0) == -1){
          printf("%s\n", strerror(errno));
@@ -97,7 +100,7 @@ int main(int argc, char *argv[]){
             printf("%s\n", strerror(errno));
             exit(EXIT_FAILURE);      
          }
-         if(!strcmp(msg.mtext, "FIN")){
+         if(msg.fin == 1){
             break;
          } 
          cnt = 0;
@@ -117,7 +120,7 @@ int main(int argc, char *argv[]){
          exit(EXIT_FAILURE);
       }
    } else if(i == 2){
-      int fd = open(argv[2], O_WRONLY);
+      int fd = open(argv[2], O_WRONLY | O_CREAT | O_TRUNC);
       if(fd < 0){
          printf("Error al abrir el fichero de escritura.\n");
          exit(EXIT_FAILURE);
@@ -132,7 +135,7 @@ int main(int argc, char *argv[]){
             printf("%s\n", strerror(errno));
             exit(EXIT_FAILURE); 
          }
-         if(!strcmp(msg.mtext, "FIN")){
+         if(msg.fin == 1){
             break;
          }
          write(fd, msg.mtext, msg.lastSize);
