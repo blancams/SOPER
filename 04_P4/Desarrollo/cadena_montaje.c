@@ -8,7 +8,7 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <errno.h>
-
+#include <fcntl.h>
 #include <ctype.h>
 
 #define NUM_PROC 3
@@ -20,6 +20,7 @@
 typedef struct _Mensaje{
    long tipo;
    char mtext[MAX_CHAR];
+   int lastSize;
 }mensaje;	
 
 int main(int argc, char *argv[]){
@@ -57,20 +58,19 @@ int main(int argc, char *argv[]){
       }
 	}
 
-   if(i == 1){
-      FILE *f1 = fopen(argv[1], "r+");
-      if(!f1){
+   if(i == 0){
+      int fd = open(argv[1], O_RDONLY);
+      if(fd < 0){
          printf("Error al abrir el fichero de lectura.\n");
          exit(EXIT_FAILURE);
       }
-      while(!feof(f1)){
-         if(fread(msg.mtext, sizeof(char), MAX_CHAR, f1) < MAX_CHAR) break;
+      msqid = msgget(clave, 0660);
+      if(msqid == -1){
+         printf("Error al acceder a la cola de mensajes. %s\n", strerror(errno));
+         exit(EXIT_FAILURE);
+      }
+      while((msg.lastSize = read(fd, msg.mtext, sizeof(msg.mtext))) > 0){
          msg.tipo = 1;
-         msqid = msgget(clave, 0660);
-         if(msqid == -1){
-            printf("Error al acceder a la cola de mensajes. %s\n", strerror(errno));
-            exit(EXIT_FAILURE);
-         }
          sleep(1);
          if (msgsnd(msqid, &msg, sizeof(mensaje) - sizeof(long), 0) == -1){
             printf("%s\n", strerror(errno));
@@ -84,46 +84,41 @@ int main(int argc, char *argv[]){
          printf("%s\n", strerror(errno));
          exit(EXIT_FAILURE);
       }
-      printf("1HB");
-      fclose(f1);
-   } else if(i == 2){
+      close(fd);
+   } else if(i == 1){
       int cnt;
       msqid = msgget(clave, 0660);
       if(msqid == -1){
          printf("Error al acceder a la cola de mensajes. %s\n", strerror(errno));
          exit(EXIT_FAILURE);
       }
-     // strcpy(msg.mtext, "jhbs");
       while(1){
          if(msgrcv(msqid, &msg, sizeof(mensaje) - sizeof(long), 1,  0) == -1){
             printf("%s\n", strerror(errno));
             exit(EXIT_FAILURE);      
          }
-         //printf("\n%s", msg.mtext);
          if(!strcmp(msg.mtext, "FIN")){
-            printf("2HB");
             break;
          } 
-         //printf("%d\n", i);
          cnt = 0;
          while(cnt < strlen(msg.mtext)){
             msg.mtext[cnt] = (char) toupper(msg.mtext[cnt]);
             cnt++;
          }
          msg.tipo = 2;
-         if(msgsnd(msqid, (struct msgbuf *) &msg, sizeof(mensaje) - sizeof(long), 0) == -1){
+         if(msgsnd(msqid, &msg, sizeof(mensaje) - sizeof(long), 0) == -1){
             printf("%s\n", strerror(errno));
             exit(EXIT_FAILURE); 
          }
       }
       msg.tipo = 2;
-      if (msgsnd(msqid, &msg, sizeof(char)*strlen(msg.mtext), 0) == -1){
+      if (msgsnd(msqid, &msg, sizeof(mensaje) - sizeof(long), 0) == -1){
          printf("%s\n", strerror(errno));
          exit(EXIT_FAILURE);
       }
-   } else if(i == 3){
-      FILE *f2 = fopen(argv[2], "w+");
-      if(!f2){
+   } else if(i == 2){
+      int fd = open(argv[2], O_WRONLY);
+      if(fd < 0){
          printf("Error al abrir el fichero de escritura.\n");
          exit(EXIT_FAILURE);
       }
@@ -133,23 +128,16 @@ int main(int argc, char *argv[]){
          exit(EXIT_FAILURE);
       }
       while(1){
-         if(msgrcv(msqid, (struct msgbuf *) &msg, sizeof(mensaje) - sizeof(long), 2,  MSG_NOERROR) == -1){
+         if(msgrcv(msqid, &msg, sizeof(mensaje) - sizeof(long), 2,  0) == -1){
             printf("%s\n", strerror(errno));
             exit(EXIT_FAILURE); 
          }
-         //printf("\nREC");
-         //printf("\n\n%s%lu", msg.mtext, strlen(msg.mtext));
          if(!strcmp(msg.mtext, "FIN")){
-            printf("\n3HB");
             break;
          }
-         //printf("\nCOMP");
-         if(sizeof(msg.mtext) < MAX_CHAR) break;
-         fwrite(msg.mtext, sizeof(char), MAX_CHAR, f2);
-         //printf("\nESC");
+         write(fd, msg.mtext, msg.lastSize);
       }
-      printf("%d\n", i);
-      fclose(f2);
+      close(fd);
       msgctl(msqid, IPC_RMID, (struct msqid_ds *) NULL);
    } else{
       for(i = 0; i < NUM_PROC; i++){
