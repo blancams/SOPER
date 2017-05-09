@@ -29,6 +29,7 @@ int crear_cm(int *cmid, int key) {
    }
 }
 
+/*
 int enviar_m(int msid, char* mensaje, long tipo) {
    int ret;
    mensaje msg;
@@ -48,7 +49,16 @@ int enviar_m(int msid, char* mensaje, long tipo) {
       return ERROR;
    }
 }
+*/
 
+int enviar_m(int msid, const void *mensaje){
+   if(msgsnd(msid, &mensaje, sizeof(mensaje) - sizeof(long), 0) == -1){
+      return ERROR;
+   }
+   return OK;
+}
+
+/*
 int recibir_m(int msid, long tipo) {
    ssize_t ret;
    mensaje msg;
@@ -60,6 +70,14 @@ int recibir_m(int msid, long tipo) {
    } else {
       return OK;
    }
+}
+*/
+
+int recibir_m(int msid, const void *mensaje, long tipo){
+   if(msgrcv(msid, &mensaje, sizeof(mensaje) - sizeof(long), tipo, 0) == -1){
+      return ERROR;
+   }
+   return OK;
 }
 
 int eliminar_cm(int msid) {
