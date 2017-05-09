@@ -11,15 +11,15 @@
 #define FILEKEY "/bin/cat"    /*!< Fichero para la generacion de la clave */
 
 int crear_shm(int size, int *shmid, int key) {
-   key_t key
+   key_t k;
    int id;
 
-   key = ftok(FILEKEY, key);
-   if (key == (key_t) -1) {
+   k = ftok(FILEKEY, key);
+   if (k == (key_t) -1) {
       return ERROR;
    }
 
-   id = shmget(key, size, IPC_CREAT | IPC_EXCL | SHM_R | SHM_W);
+   id = shmget(k, size, IPC_CREAT | IPC_EXCL | SHM_R | SHM_W);
    if (id == -1) {
       return ERROR;
    } else {
