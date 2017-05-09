@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -22,7 +21,7 @@ typedef struct _Mensaje{
    char mtext[MAX_CHAR];
    int lastSize;
    int fin;
-}mensaje;	
+}mensaje;
 
 int main(int argc, char *argv[]){
 
@@ -98,11 +97,11 @@ int main(int argc, char *argv[]){
       while(1){
          if(msgrcv(msqid, &msg, sizeof(mensaje) - sizeof(long), 1,  0) == -1){
             printf("%s\n", strerror(errno));
-            exit(EXIT_FAILURE);      
+            exit(EXIT_FAILURE);
          }
          if(msg.fin == 1){
             break;
-         } 
+         }
          cnt = 0;
          while(cnt < strlen(msg.mtext)){
             msg.mtext[cnt] = (char) toupper(msg.mtext[cnt]);
@@ -111,7 +110,7 @@ int main(int argc, char *argv[]){
          msg.tipo = 2;
          if(msgsnd(msqid, &msg, sizeof(mensaje) - sizeof(long), 0) == -1){
             printf("%s\n", strerror(errno));
-            exit(EXIT_FAILURE); 
+            exit(EXIT_FAILURE);
          }
       }
       msg.tipo = 2;
@@ -133,7 +132,7 @@ int main(int argc, char *argv[]){
       while(1){
          if(msgrcv(msqid, &msg, sizeof(mensaje) - sizeof(long), 2,  0) == -1){
             printf("%s\n", strerror(errno));
-            exit(EXIT_FAILURE); 
+            exit(EXIT_FAILURE);
          }
          if(msg.fin == 1){
             break;
