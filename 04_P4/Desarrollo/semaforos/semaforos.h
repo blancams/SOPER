@@ -3,7 +3,7 @@
  *
  * Grupo 2201, Pareja 10.
  * En este modulo se ha implementado la cabecera para la implementacion
- * de la llibreria de semaforos.
+ * de la libreria de semaforos.
  *
  * @file semaforos.h
  * @author Blanca Martín (blanca.martins@estudiante.uam.es)
