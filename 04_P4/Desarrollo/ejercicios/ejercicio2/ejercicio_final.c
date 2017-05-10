@@ -239,6 +239,8 @@ int main(int argc, char *argv[]){
    if(i == 0){
       /* Proceso monitor */
 
+      /* Debera tener acceso a todos los mensajes, las areas de memoria compartida, etc */
+
       /* Mostrar el status de la carrera : comenzada? */
       /* Posicion de los caballos */
       /* Estados de las apuestas */
@@ -332,7 +334,7 @@ int main(int argc, char *argv[]){
       }
 
       /* Cada 0,1 segundos genera una apuesta y envia el mensaje al gestor */
-   } else if(i == n_caballos){
+   } else if(i == n_caballos + 3){
       /* Proceso principal */
       /* (Fer) Aqui he: cerrado la tuberia y creado un bucle para la simulacion, donde
          basicamente he copiado lo que tu ya tenias, cambiando algunas cosas para adaptar
