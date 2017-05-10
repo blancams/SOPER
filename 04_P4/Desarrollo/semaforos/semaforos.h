@@ -48,14 +48,14 @@ int Borrar_Semaforo(int semid);
 /**
  * @brief Crea un semaforo con la clave y el tamaño.
  *
- * @param key_t key: Clave precompartida del semaforo.
+ * @param int key: Clave precompartida del semaforo.
  * @param int size: Tamaño del semaforo.
  * @param int *semid: Nuevo identificador del semaforo.
  * @return int: ERROR en caso de error,
               0 si ha creado el semaforo,
               1 si ya estaba creado.
  */
-int Crear_Semaforo(key_t key, int size, int *semid);
+int Crear_Semaforo(int key, int size, int *semid);
 
 /**
  * @brief Baja el semaforo indicado.

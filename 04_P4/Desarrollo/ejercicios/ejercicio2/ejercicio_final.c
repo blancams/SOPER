@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
 
 #include "../../senales/senales.h"
 #include "../../memcomp/memcomp.h"
@@ -16,6 +17,8 @@
 #define N_KEY_CABALLOS 300
 #define N_KEY_APUESTAS 247
 #define N_KEY_ACCGTAPU 275
+#define N_KEY_SEMAFORO 72345
+#define MAX_APUESTA 500
 
 void manejador_SIGTERM(int sig);
 void manejador_SIGUSR1(int sig);
@@ -52,18 +55,20 @@ typedef struct _Apuestas_Total{
 /* (Fer) Estructura para mandar como argumento del gestor a los hilos ventanilla */
 typedef struct _Gestor_Ventanilla{
    int msqid_apuestas;
+   int semid;
    apuestas_total *apuestas;
 } str_ventanilla;
 
 int main(int argc, char *argv[]){
 
-   int i, j;
+   int i, j, k;
    int n_caballos, longitud, n_apostadores, n_ventanillas;
    int pid;
-   int msqid_tiradas, msqid_apuestas, shmid_apuestas;
+   int msqid, shmid_apuestas, semid;
    int fd[2];
    pid_t * pid_procesos;
    int *posiciones;
+   unsigned short semval;
    caballo_principal mensaje;
    apostador_gestor ap_generada;
    apuestas_total apuestas;
@@ -151,22 +156,36 @@ int main(int argc, char *argv[]){
 
    /* Creacion de la cola de mensajes para que los caballos le pasen
       el resultado de sus tiradas al proceso principal */
-   if(crear_cm(&msqid_tiradas, N_KEY_CABALLOS)== -1){
+   if(crear_cm(&msqid, N_KEY_CABALLOS)== -1){
       printf("Fallo en la creacion de la cola de mensajes 1.\n");
       exit(EXIT_FAILURE);
    }
-
-   /* Creacion de la cola de mensajes para que el generador de apuestas
-      le pase las apuestas al gestor */
+   /*
+    Creacion de la cola de mensajes para que el generador de apuestas
+      le pase las apuestas al gestor
    if(crear_cm(&msqid_apuestas, N_KEY_APUESTAS) == -1){
       printf("Fallo en la creacion de la cola de mensajes 2.\n");
       exit(EXIT_FAILURE);
    }
-
-   /* (Fer) Creacion de la memoria compartida para que gestor de apuestas y
-      monitor tengan la informacion de las apuestas */
+   */
+      /* (Fer) Creacion de la memoria compartida para que gestor de apuestas y
+         monitor tengan la informacion de las apuestas */
    if(crear_shm(sizeof(apuestas_total), &shmid_apuestas, N_KEY_ACCGTAPU) == -1) {
       printf("Fallo en la creacion de memoria compartida.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   /* (Fer) Creacion del array de semaforos (de momento con uno solo, puede que
+      acabe habiendo mas). */
+   if (Crear_Semaforo(N_KEY_SEMAFORO, 1, &semid) == -1) {
+      printf("Error al crear los semáforos.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   /* Inicializacion del semaforo */
+   semval = 1;
+   if (Inicializar_Semaforo(semid, &semval) == -1) {
+      printf("Error al inicializar los semáforos.\n");
       exit(EXIT_FAILURE);
    }
 
@@ -176,7 +195,7 @@ int main(int argc, char *argv[]){
    pid_procesos = (pid_t *) malloc(sizeof(pid_t) * (n_caballos+3));
    posiciones = (int *) malloc(sizeof(int) * n_caballos);
    apuestas.apostado = (double *) malloc(sizeof(double) * n_caballos);
-   apuestas.ganancia = (double *) malloc(sizeof(double) * n_caballos);
+   apuestas.ganancia = (double *) malloc(sizeof(double) * n_apostadores);
    apuestas.cotizacion = (double *) malloc(sizeof(double) * n_caballos);
    hilos = (pthread_t *) malloc(sizeof(pthread_t) * n_ventanillas);
 
@@ -244,19 +263,20 @@ int main(int argc, char *argv[]){
       }
 
       /* (Fer) Acceso a cola de mensajes */
-      if(crear_cm(&msqid_apuestas, N_KEY_APUESTAS) == -1){
+      if(crear_cm(&msqid, N_KEY_APUESTAS) == -1){
          printf("Fallo en el acceso a la cola de mensajes 2.\n");
          exit(EXIT_FAILURE);
       }
 
       /* (Fer) Estructura de argumento a ventanillas */
-      str.msqid_apuestas = msqid_apuestas;
+      str.msqid_apuestas = msqid;
+      str.semid = semid;
       str.apuestas = &apuestas;
 
       /* (Fer) Inicializacion info apuestas */
-      for (j = 0; j < n_caballos; j++) {
+      for (j = 0, k = 0; j < n_caballos || k < n_apostadores; j++, k++) {
          apuestas.apostado[j] = 1.0;
-         apuestas.ganancia[j] = 0.0;
+         apuestas.ganancia[k] = 0.0;
       }
       apuestas.total = 1.0 * n_caballos;
 
@@ -292,7 +312,24 @@ int main(int argc, char *argv[]){
       /* (Fer) Correcto */
    } else if(i == 2){
       /* (Fer) Aqui no he hecho nada aun tampoco */
+      char nom_apostador[13];
       /* Proceso apostador */
+
+      while(1) {
+         usleep(1000);
+
+         ap_generada.tipo = 2;
+         sprintf(nom_apostador, "%d", rand() % n_apostadores);
+         strcat("Apostador-", nom_apostador);
+         strcpy(ap_generada.nombre, nom_apostador);
+         ap_generada.caballo = rand() % n_caballos;
+         ap_generada.apuesta = ((double)rand() / (double)RAND_MAX) * MAX_APUESTA;
+
+         if (enviar_m(msqid, &ap_generada) == -1) {
+            printf("Error al enviar mensaje desde generador.\n");
+            exit(EXIT_FAILURE);
+         }
+      }
 
       /* Cada 0,1 segundos genera una apuesta y envia el mensaje al gestor */
    } else if(i == n_caballos){
@@ -308,9 +345,8 @@ int main(int argc, char *argv[]){
             posiciones[j] = 0;
          }
          /* Escribimos para cada caballo? No tiene sentido esto no ?  No me acuerdo de tuberias sorry */
-         //for(j = 0; j < n_caballos; j++){
          write(fd[1], posiciones, sizeof(posiciones));
-         //}
+
          /* Le mandamos una señal a cada caballo ?  Como ?  Array de pids guarro ? */
          for(j = 3; j < n_caballos+3; j++){
             if(enviar_senal(pid_procesos[j], SIGUSR1) == -1){
@@ -319,7 +355,7 @@ int main(int argc, char *argv[]){
             }
          }
          for(j = 0; j < n_caballos; j++){
-            if(recibir_m(msqid_tiradas, &mensaje, 1) == -1){
+            if(recibir_m(msqid, &mensaje, 1) == -1){
                printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
                exit(EXIT_FAILURE);
             }
@@ -332,8 +368,7 @@ int main(int argc, char *argv[]){
             /* Pues terminamos */
             printf("%d", posiciones[j]);
             fflush(stdout);
-            eliminar_cm(msqid_tiradas);
-            eliminar_cm(msqid_apuestas);
+            eliminar_cm(msqid);
             }
          }
       }
@@ -356,7 +391,7 @@ estaba en 0, y que esto sea la condicion de salida de los bucles */
 void manejador_SIGTERM(int sig){
    // (Blanca) terminar deberia ser una variable global si quieres hacerlo asi
    // pero como los caballos no reservan ningun tipo de memoria ni nada,
-   // creo que podriamos poner exit(EXIT_SUCCESS) no? 
+   // creo que podriamos poner exit(EXIT_SUCCESS) no?
   /*
    terminar = 1;
    return;
@@ -389,7 +424,7 @@ error */
 int caballos(int i, int *fd, int *posiciones, int n_caballos) {
    /* Caballitos */
 
-   int max, min, j, tirada, msqid_tiradas, terminar;
+   int max, min, j, tirada, msqid, terminar;
    caballo_principal mensaje;
    int caballos;
 
@@ -397,7 +432,7 @@ int caballos(int i, int *fd, int *posiciones, int n_caballos) {
    terminar = 0;
 
    /* (Fer) Acceso a la cola de mensajes de los caballos */
-   if(crear_cm(&msqid_tiradas, N_KEY_CABALLOS)== -1){
+   if(crear_cm(&msqid, N_KEY_CABALLOS)== -1){
       printf("Fallo en la creacion de la cola de mensajes (caballos).\n");
       return -1;
    }
@@ -445,9 +480,9 @@ int caballos(int i, int *fd, int *posiciones, int n_caballos) {
       mensaje.tirada = tirada;
 
       /* Mandamos nuestra info al proceso principal a traves de mensaje */
-      if(enviar_m(msqid_tiradas, &mensaje) == -1){
+      if(enviar_m(msqid, &mensaje) == -1){
          printf("Error al mandar el mensaje desde los caballos al proceso principal.\n");
-         return -1;;
+         return -1;
       }
 
    }
@@ -479,12 +514,20 @@ void *ventanilla(void *arg) {
       }
 
       apostador = apuesta.nombre[10] - '0';
+      if (apostador == 1) {
+         if (apuesta.nombre[11] == '\0') {
+            apostador = 10;
+         } else {
+            apostador = 1;
+         }
+      }
       caballo = apuesta.caballo;
+      cantidad = apuesta.apuesta;
 
-      if (Down_Semaforo(semid, 0, 0) == -1) {
+      if (Down_Semaforo(str->semid, 0, 0) == -1) {
          printf("Error al ejecutar función Down_Semaforo.\n");
          exit(EXIT_FAILURE);
-         // (BLanca)  Tenias puesto return ERROR;      
+         // (BLanca)  Tenias puesto return ERROR;
       }
 
       str->apuestas->total += cantidad;
@@ -492,7 +535,7 @@ void *ventanilla(void *arg) {
       str->apuestas->cotizacion[caballo] = str->apuestas->total / str->apuestas->apostado[caballo];
       str->apuestas->ganancia[apostador] = cantidad * str->apuestas->cotizacion[caballo];
 
-      if (Up_Semaforo(semid, 0, 0) == -1) {
+      if (Up_Semaforo(str->semid, 0, 0) == -1) {
          printf("Error al ejecutar función Up_Semaforo.\n");
          exit(EXIT_FAILURE);
          // (BLanca)  Tenias puesto return ERROR;

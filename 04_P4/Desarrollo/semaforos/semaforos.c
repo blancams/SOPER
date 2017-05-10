@@ -21,6 +21,8 @@
 
 #include "semaforos.h"
 
+#define FILEKEY "/bin/cat"
+
 int Inicializar_Semaforo(int semid, unsigned short *array) {
 	union semun arg;
 	arg.array = array;
@@ -37,8 +39,10 @@ int Borrar_Semaforo(int semid) {
    return OK;
 }
 
-int Crear_Semaforo(key_t key, int size, int *semid) {
-   int id = semget(key, size, IPC_CREAT | IPC_EXCL | SHM_R | SHM_W);
+int Crear_Semaforo(int key, int size, int *semid) {
+	key_t k = ftok(FILEKEY, key);
+
+   int id = semget(k, size, IPC_CREAT | IPC_EXCL | SHM_R | SHM_W);
 
    if(id == -1 && errno == EEXIST) {
       id = semget(key, size, SHM_R | SHM_W);
