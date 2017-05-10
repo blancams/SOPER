@@ -1,0 +1,485 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include "../../senales/senales.h"
+#include "../../memcomp/memcomp.h"
+#include "../../mensajes/mensajes.h"
+
+#define N_KEY_CABALLOS 300
+#define N_KEY_APUESTAS 247
+#define N_KEY_ACCGTAPU 275
+
+void manejador_SIGTERM(int sig);
+void manejador_SIGUSR1(int sig);
+
+int tirada_normal();
+int tirada_ganadora();
+int tirada_remontadora();
+
+/* Estructura para la comunicacion de los caballos al proceso principal */
+typedef struct _Caballos_Principal{
+   long tipo;
+   int tirada;
+} caballo_principal;
+
+/* Estructura para la comunicacion del generador de apuestas al gestor */
+typedef struct _Apostador_Gestor{
+   long tipo;
+   char nombre[20];
+   int caballo;
+   double apuesta;
+} apostador_gestor;
+
+/* (Fer) Estructura para saber en todo momento los datos de las apuestas */
+typedef struct _Apuestas_Total{
+   double *apostado;
+   double *cotizacion;
+   double total;
+   double *ganancia;
+} apuestas_total;
+
+/* (Fer) Estructura para mandar como argumento del gestor a los hilos ventanilla */
+typedef struct _Gestor_Ventanilla{
+   int msqid_apuestas;
+   apuestas_total *apuestas;
+} str_ventanilla;
+
+int main(int argc, char *argv[]){
+
+   int i, j;
+   int n_caballos, longitud, n_apostadores, n_ventanillas;
+   int pid;
+   int msqid_tiradas, msqid_apuestas, shmid_apuestas;
+   int fd[2];
+   pid_t * pid_procesos;
+   int *posiciones;
+   caballo_principal mensaje;
+   apostador_gestor ap_generada;
+   apuestas_total apuestas;
+   phtread_t *hilos;
+   void manejador_SIGUSR1();
+   void manejador_SIGTERM();
+
+   /* Comprobación de los argumentos de entrada */
+	if(argc != 5){
+      printf("Fallo en el número de argumentos de entrada.\n");
+      exit(EXIT_FAILURE);
+   } else {
+      i = 0;
+      while(argv[1][i] != '\0') {
+         if ((argv[1][i] < 48) || (argv[1][i] > 57)) {
+            printf("Fallo en los argumentos de entrada.\n");
+            exit(EXIT_FAILURE);
+         }
+         i++;
+      }
+      while(argv[2][i] != '\0') {
+         if ((argv[1][i] < 48) || (argv[1][i] > 57)) {
+            printf("Fallo en los argumentos de entrada.\n");
+            exit(EXIT_FAILURE);
+         }
+         i++;
+      }
+      while(argv[3][i] != '\0') {
+         if ((argv[1][i] < 48) || (argv[1][i] > 57)) {
+            printf("Fallo en los argumentos de entrada.\n");
+            exit(EXIT_FAILURE);
+         }
+         i++;
+      }
+      while(argv[4][i] != '\0') {
+         if ((argv[1][i] < 48) || (argv[1][i] > 57)) {
+            printf("Fallo en los argumentos de entrada.\n");
+            exit(EXIT_FAILURE);
+         }
+         i++;
+      }
+   }
+
+   /* Asignacion de los argumentos de entrada y comprobacion de validez */
+   n_caballos = atoi(argv[1]);
+   if(n_caballos <= 0 || n_caballos > 10){
+      printf("Fallo en los argumentos de entrada.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   longitud = atoi(argv[2]);
+   if(longitud <= 0){
+      printf("Fallo en los argumentos de entrada.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   n_apostadores = atoi(argv[3]);
+   if(n_apostadores <= 0 || n_apostadores > 10){
+      printf("Fallo en los argumentos de entrada.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   n_ventanillas = atoi(argv[4]);
+   if(n_ventanillas <= 0){
+      printf("Fallo en los argumentos de entrada.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   printf("Pasa de asignaciones.\n");
+
+   /* Asignacion del manejador de terminacion */
+   if (crear_manej(SIGTERM, &manejador_SIGTERM) == -1) {
+      printf("Error al crear el manejador.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   /* Asignacion del manejador de alarma */
+   if (crear_manej(SIGUSR1, &manejador_SIGUSR1) == -1) {
+      printf("Error al crear el manejador.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   /* (Fer) Para inicializar la semilla de numeros aleatorios */
+   srand(time(NULL));
+
+   /* Creacion de la cola de mensajes para que los caballos le pasen
+      el resultado de sus tiradas al proceso principal */
+   if(crear_cm(&msqid_tiradas, N_KEY_CABALLOS)== -1){
+      printf("Fallo en la creacion de la cola de mensajes 1.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   /* Creacion de la cola de mensajes para que el generador de apuestas
+      le pase las apuestas al gestor */
+   if(crear_cm(&msqid_apuestas, N_KEY_APUESTAS) == -1){
+      printf("Fallo en la creacion de la cola de mensajes 2.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   /* (Fer) Creacion de la memoria compartida para que gestor de apuestas y
+      monitor tengan la informacion de las apuestas */
+   if(crear_shm(sizeof(apuestas_total), &shmid_apuestas, N_KEY_ACCGTAPU) == -1) {
+      printf("Fallo en la creacion de memoria compartida.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   /* No tengo ni zorra de lo que estoy haciendo */
+   /* (Fer) Pues bastante idea tenías. He añadido todas las cosas extra que requieren
+   reserva de memoria: los hilos y los arrays con datos de apuestas. Faltan. */
+   pid_procesos = (pid_t *) malloc(sizeof(pid_t) * (n_caballos+3));
+   posiciones = (int *) malloc(sizeof(int) * n_caballos);
+   apuestas.apostado = (double *) malloc(sizeof(double) * n_caballos);
+   apuestas.ganancia = (double *) malloc(sizeof(double) * n_caballos);
+   apuestas.cotizacion = (double *) malloc(sizeof(double) * n_caballos);
+   hilos = (pthread_t *) malloc(sizeof(pthread_t) * n_ventanillas);
+
+   /* Creacion de los procesos */
+   /* (Fer) He sacado del bucle casi todo. He dejado la creacion de las tuberias (no hacia
+      falta el array como hablamos en clase, se hace asi, creando una antes de cada
+      fork, no me acordaba), que los caballos hijos cierren la escritura de su tuberia,
+      y guardo todos los procesos en el array de pid. */
+   for(i = 0; i < n_caballos + 3; i++){
+
+      if (i > 2) {
+         if(pipe(fd)==-1){
+            printf("Error creando la tubería.\n");
+            exit(EXIT_FAILURE);
+         }
+      }
+
+      if((pid = fork()) == -1) {
+
+         printf("Error al hacer el fork.\n");
+         exit(EXIT_FAILURE);
+
+      } else if(!pid){
+
+         if (i > 2) {
+            close(fd[1]);
+         }
+
+         break;
+
+      } else {
+         /* Guardamos los pids de los caballos o que ? */
+         /* (Fer) Y tambien los de los otros procesos :D */
+         pid_procesos[i] = pid;
+
+      }
+
+   }
+
+   /* (Fer) Aqui no he tocado nada */
+   if(i == 0){
+      /* Proceso monitor */
+
+      /* Mostrar el status de la carrera : comenzada? */
+      /* Posicion de los caballos */
+      /* Estados de las apuestas */
+
+      /* Si la carrera ha acabdo : finalizada */
+      /* Tres primeros puestos */
+      /* Resultados de las apuestas */
+   } else if(i == 1){
+      /* (Fer) Aqui hay cosas. Desde este proceso (el gestor de apuestas) accedo a la
+      memoria compartida para compartir info con el monitor; accedo a la cola de
+      mensajes con la que nos comunicamos con el generador de apuestas; creo la
+      estructura para comunicarme con los hilos ventanilla; inicializo la estructura
+      de datos de apuestas; creo los hilos ventanilla; pauso el proceso principal;
+      cuando reciba una señal, cancelo todos los hilos, los espero y se termina el
+      proceso principal. */
+      str_ventanilla str;
+
+      /* (Fer) Acceso a memoria compartida */
+      if (acceder_shm(shmid_apuestas, (char*) &apuestas) == -1) {
+         printf("Error al acceder a memoria compartida en gestor.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      /* (Fer) Acceso a cola de mensajes */
+      if(crear_cm(&msqid_apuestas, N_KEY_APUESTAS) == -1){
+         printf("Fallo en el acceso a la cola de mensajes 2.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      /* (Fer) Estructura de argumento a ventanillas */
+      str.msqid_apuestas = msqid_apuestas;
+      str.apuestas = &apuestas;
+
+      /* (Fer) Inicializacion info apuestas */
+      for (j = 0; j < n_caballos; j++) {
+         apuestas.apostado[j] = 1.0;
+         apuestas.ganancia[j] = 0.0;
+      }
+      apuestas.total = 1.0 * n_caballos;
+
+      /* (Fer) Creacion hilos */
+      for (j = 0; j < n_ventanillas; j++) {
+         if (crear_hilo(&hilos[j], ventanilla, (void*) &str)) == -1) {
+            printf("Error al crear hilos.\n");
+            exit(EXIT_FAILURE);
+         }
+      }
+
+      /* (Fer) Pausa */
+      if(pause() != -1){
+         printf("Fallo en pause de gestor.\n");
+         return -1;
+      }
+
+      /* (Fer) Cancelacion y union con hilos */
+      for (j = 0; j < n_ventanillas; j++) {
+         if (salir_hilo(hilos[j]) == -1) {
+            printf("Error al terminar hilos.\n");
+            exit(EXIT_FAILURE);
+         }
+
+         if (unir_hilo(hilos[j]) == -1) {
+            printf("Error al esperar hilos.\n");
+            exit(EXIT_FAILURE);
+         }
+      }
+
+      exit(EXIT_SUCCESS);
+      /* Una movida bastisima */
+      /* (Fer) Correcto */
+   } else if(i == 2){
+      /* (Fer) Aqui no he hecho nada aun tampoco */
+      /* Proceso apostador */
+
+      /* Cada 0,1 segundos genera una apuesta y envia el mensaje al gestor */
+   } else if(i == n_caballos){
+      /* Proceso principal */
+      /* (Fer) Aqui he: cerrado la tuberia y creado un bucle para la simulacion, donde
+         basicamente he copiado lo que tu ya tenias, cambiando algunas cosas para adaptar
+         los cambios hechos en el resto del codigo. Hay que arreglar la parte de la
+         liberacion de recursos pero meh, al final. */
+      close(fd[0]);
+      while(1) {
+         /* Inicializacion de las posiciones de cada caballo ? */
+         for(j = 0; j < n_caballos; j++){
+            posiciones[j] = 0;
+         }
+         /* Escribimos para cada caballo? No tiene sentido esto no ?  No me acuerdo de tuberias sorry */
+         //for(j = 0; j < n_caballos; j++){
+         write(fd[1], posiciones, sizeof(posiciones));
+         //}
+         /* Le mandamos una señal a cada caballo ?  Como ?  Array de pids guarro ? */
+         for(j = 3; j < n_caballos+3; j++){
+            if(enviar_senal(pid_procesos[j], SIGUSR1) == -1){
+               printf("Fallo al enviar la señal desde el proceso principal a los caballos.\n");
+               exit(EXIT_FAILURE);
+            }
+         }
+         for(j = 0; j < n_caballos; j++){
+            if(recibir_m(msqid_tiradas, &mensaje, 1) == -1){
+               printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
+               exit(EXIT_FAILURE);
+            }
+            posiciones[j] += mensaje.tirada;
+         }
+         /* Algun caballo ha llegado ya a la meta ? Este ejercicio no tiene sentido en eficiencia
+         (o lo estoy haciendo tremendamente mal) */
+         for(j = 0; j < n_caballos; j++){
+            if(posiciones[j] >= longitud) {
+            /* Pues terminamos */
+            printf("%d", posiciones[j]);
+            fflush(stdout);
+            eliminar_cm(msqid_tiradas);
+            eliminar_cm(msqid_apuestas);
+            }
+         }
+      }
+   } else {
+      /* (Fer) Esto son ya todos los procesos de los caballos. Lanzan la funcion caballos,
+      mas abajo */
+      if (caballos(i, fd, posiciones) == -1){
+         printf("Fallo en caballos %d.\n", i);
+         exit(EXIT_FAILURE);
+      }
+   }
+
+}
+
+/* (Fer) Esto esta en proceso porque aun no se muy bien como vamos a hacer para avisar
+a todos los procesos de que se acaba la carrera. Estoy pensando en que, como CTRL+C
+es SIGINT, podemos hacer un manejador de SIGINT que mande SIGTERM a todos los procesos,
+donde el manejador de SIGTERM haga lo de poner una variable a 1 cuando al principio
+estaba en 0, y que esto sea la condicion de salida de los bucles */
+void manejador_SIGTERM(int sig){
+   terminar = 1;
+   return;
+}
+
+void manejador_SIGUSR1(int sig){
+   /* La reciben todos los caballitos y saben que el proceso padre les
+      esta esperando */
+   return;
+}
+
+int tirada_normal(){
+   return rand() % 6 + 1;
+}
+
+int tirada_ganadora(){
+   return rand() % 7 + 1;
+}
+
+int tirada_remontadora(){
+   return tirada_normal() + tirada_normal();
+}
+
+/* (Fer) Amo a vé. Creo que esta clarinete: accedo a la cola de mensajes para enviarlos
+al proceso principal y comienzo el bucle, donde esta lo que habias hecho ya tu con
+algunas correcciones. Cuando sale del bucle (terminar=1) se retorna guay, si no con
+error */
+int caballos(int i, int *fd, int *posiciones) {
+   /* Caballitos */
+
+   int max, min, j, tirada, msqid_tiradas, terminar;
+   caballo_principal mensaje;
+
+   /* (Fer) Valor para la finalización controlada del bucle */
+   terminar = 0;
+
+   /* (Fer) Acceso a la cola de mensajes de los caballos */
+   if(crear_cm(&msqid_tiradas, N_KEY_CABALLOS)== -1){
+      printf("Fallo en la creacion de la cola de mensajes (caballos).\n");
+      return -1;
+   }
+
+   /* (Fer) Bucle principal de los caballos */
+   while(!terminar) {
+      /* Hacemos un pause para que el proceso principal nos de la info de las posiciones y demas ? */
+      if(pause() != -1){
+         printf("No se en que momento da este error.\n");
+         return -1;
+      }
+
+      /* Leemos los datos para decidir la tirada */
+      read(fd[0], posiciones, sizeof(posiciones));
+      max = 0;
+      min = INT_MAX;
+
+      /* Cálculo del caballo líder y último */
+      for(j = 0; j < n_caballos; j++){
+         if(max < posiciones[j]){
+            max = posiciones[j];
+         }
+         if(min > posiciones[j]){
+            min = posiciones[j];
+         }
+      }
+
+      /* Una vez sabemos el que va en cabeza y el ultimo miramos a ver si somos nosotros
+         y tiramos */
+      if (max) {
+         if(posiciones[i - 3] == max){
+            tirada = tirada_ganadora();
+         } else if(posiciones[i - 3] == min){
+            tirada = tirada_remontadora();
+         } else{
+            tirada = tirada_normal();
+         }
+      } else {
+         tirada = tirada_normal();
+      }
+
+      /* Definicion de la estructura a enviar por mensaje */
+      mensaje.tipo = 1;
+      mensaje.tirada = tirada;
+
+      /* Mandamos nuestra info al proceso principal a traves de mensaje */
+      if(enviar_m(msqid_tiradas, &mensaje) == -1){
+         printf("Error al mandar el mensaje desde los caballos al proceso principal.\n");
+         return -1;;
+      }
+
+   }
+
+   /* (Fer) Cuando se sale del bucle, retornamos correctamente */
+   return 0;
+
+}
+
+/* (Fer) Esta es chunguita. Basicamente es lo que ejecuta cada hilo del gestor de apuestas.
+Recibo como argumento un puntero a la estructura donde tengo el identificador de la
+cola de mensajes de las apuestas generadas y la estructura con la info general de
+apuestas, y hago los cambios pertinentes. No he implementado nada de los semaforos en
+todo el codigo, lo cual evidentemente falta (crearlo y tal), pero creo que es necesario
+que no escriban varias ventanillas a la vez, porque si no se puede joder el calculo de
+algunas cosas. De hecho, en la funcion de los caballos estoy muy rayado porque tengo
+la sensacion de que hace falta algun tipo de sincronizacion, aunque como al fin y al
+cabo la comunicacion va por tuberias y mensajes igual no hace falta nada mas... veremos */
+void* ventanilla(void *arg) {
+   str_ventanilla *str = (str_ventanilla*) arg;
+   int apostador, caballo;
+   double cantidad;
+   apostador_gestor apuesta;
+
+   while(1) {
+      if(recibir_m(str->msqid_apuestas, &apuesta, 2) == -1){
+         printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      apostador = apuesta.nombre[10] - '0';
+      caballo = apuesta.caballo;
+
+      if (Down_Semaforo(semid, 0, 0) == -1) {
+         printf("Error al ejecutar función Down_Semaforo.\n");
+         return ERROR;
+      }
+
+      str->apuestas->total += cantidad;
+      str->apuestas->apostado[caballo] += cantidad;
+      str->apuestas->cotizacion[caballo] = str->apuestas->total / str->apuestas->apostado[caballo];
+      str->apuestas->ganancia[apostador] = cantidad * str->apuestas->cotizacion[caballo];
+
+      if (Up_Semaforo(semid, 0, 0) == -1) {
+         printf("Error al ejecutar función Up_Semaforo.\n");
+         return ERROR;
+      }
+   }
+}

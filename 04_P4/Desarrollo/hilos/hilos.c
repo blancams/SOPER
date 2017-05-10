@@ -28,8 +28,14 @@ int unir_hilo(pthread_t hilo) {
    }
 }
 
-int salir_hilo() {
-   pthread_exit(NULL);
+int salir_hilo(pthread_t hilo) {
+   int ret;
 
-   return OK;
+   ret = pthread_cancel(hilo);
+
+   if (ret == 0) {
+      return OK;
+   } else {
+      return ERROR;
+   }
 }

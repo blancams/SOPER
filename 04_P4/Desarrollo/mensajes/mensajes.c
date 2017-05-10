@@ -22,9 +22,14 @@ int crear_cm(int *cmid, int key) {
 
    msqid = msgget(clave, IPC_CREAT | IPC_EXCL | 0660);
    if (msqid == -1) {
-      return ERROR;
+      msqid = msgget(clave, 0660);
+      if (msqid == -1) {
+         return ERROR;
+      }
+      *cmid = msqid;
+      return OK;
    } else {
-      cmid = &msqid;
+      *cmid = msqid;
       return OK;
    }
 }
@@ -51,8 +56,8 @@ int enviar_m(int msid, char* mensaje, long tipo) {
 }
 */
 
-int enviar_m(int msid, const void *mensaje){
-   if(msgsnd(msid, &mensaje, sizeof(mensaje) - sizeof(long), 0) == -1){
+int enviar_m(int msid, void *mensaje){
+   if(msgsnd(msid, mensaje, sizeof(mensaje) - sizeof(long), 0) == -1){
       return ERROR;
    }
    return OK;
@@ -73,8 +78,8 @@ int recibir_m(int msid, long tipo) {
 }
 */
 
-int recibir_m(int msid, const void *mensaje, long tipo){
-   if(msgrcv(msid, &mensaje, sizeof(mensaje) - sizeof(long), tipo, 0) == -1){
+int recibir_m(int msid, void *mensaje, long tipo){
+   if(msgrcv(msid, mensaje, sizeof(mensaje) - sizeof(long), tipo, 0) == -1){
       return ERROR;
    }
    return OK;
