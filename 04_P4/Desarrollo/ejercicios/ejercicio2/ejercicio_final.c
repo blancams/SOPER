@@ -1,4 +1,16 @@
-
+/**
+ * @brief Sistemas Operativos: Practica 4, ejercicio 2
+ *
+ * Grupo 2201, Pareja 10.
+ * En este modulo se ha implementado el codigo del segundo
+ * ejercicio de la cuarta practica, que consiste en la simulacion de 
+ * una carrera de caballos.
+ *
+ * @file ejercicio_final.c
+ * @author Blanca Martín (blanca.martins@estudiante.uam.es)
+ * @author Fernando Villar (fernando.villarg@estudiante.uam.es)
+ * @date 12-05-2017
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -14,33 +26,30 @@
 #include "../../hilos/hilos.h"
 #include "../../semaforos/semaforos.h"
 
-#define N_KEY_CABALLOS 300
-#define N_KEY_APUESTAS 247
-#define N_KEY_ACCGTAPU 275
-#define N_KEY_SEMAFORO 72345
-#define N_KEY_POSICION 334
-#define MAX_APUESTA 500
-#define MAX_CHAR 512
+#define N_KEY_CABALLOS 300       /*!< Numero para la generacion de la clave de la cola de mensajes */
+//#define N_KEY_APUESTAS 247
+#define N_KEY_ACCGTAPU 275       /*!< Numero para la generacion de la memoria compartida ente gestor y apostador */
+#define N_KEY_SEMAFORO 72345     /*!< Numero para la generacion del semaforo */
+#define N_KEY_POSICION 334       /*!< Numero para la generacion de la memoria compartida ente monitor y principal */
+#define MAX_APUESTA 500          /*!< Numero maximo de cantidad apostada */
+#define MAX_CHAR 512             /*!< Numero maximo de caracteres */
 
-void manejador_SIGTERM(int sig);
-void manejador_SIGUSR1(int sig);
-
-int tirada_normal();
-int tirada_ganadora();
-int tirada_remontadora();
-
-int caballos(int i, int *fd, int *posiciones, int n_caballos);
-void *ventanilla(void *arg);
-void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cotizaciones);
-void imprimir_finalizada(int n_caballos, int *posiciones, double *ganancia);
-
-/* Estructura para la comunicacion de los caballos al proceso principal */
+/**
+ * @brief Estructura para la comunicacion de los caballos al proceso principal.
+ *
+ * Estructura que contiene el tipo de mensaje, junto con el resultado de la tirada. 
+ */
 typedef struct _Caballos_Principal{
    long tipo;
    int tirada;
 } caballo_principal;
 
-/* Estructura para la comunicacion del generador de apuestas al gestor */
+/**
+ * @brief Estructura para la comunicacion del generador de apuestas al gestor.
+ *
+ * Estructura que contiene el tipo de mensaje, junto con el nombre del apostador,
+ * el identificador del caballo y la apuesta realizada.
+ */
 typedef struct _Apostador_Gestor{
    long tipo;
    char nombre[20];
@@ -48,7 +57,12 @@ typedef struct _Apostador_Gestor{
    double apuesta;
 } apostador_gestor;
 
-/* (Fer) Estructura para saber en todo momento los datos de las apuestas */
+/**
+ * @brief Estructura para saber en todo momento los datos de las apuestas.
+ *
+ * Estructura que contiene lo apostado por cada caballo, su cotizacion, el total y la ganancia
+ * de cada apostador.
+ */
 typedef struct _Apuestas_Total{
    double *apostado;
    double *cotizacion;
@@ -56,13 +70,103 @@ typedef struct _Apuestas_Total{
    double *ganancia;
 } apuestas_total;
 
-/* (Fer) Estructura para mandar como argumento del gestor a los hilos ventanilla */
+/* No esta bien comentado porque realmente no entiendo que es */
+/**
+ * @brief Estructura para mandar como argumento del gestor a los hilos ventanilla.
+ *
+ * Estructura que contiene el identificador de la cola de mensajes, el identificador
+ * del semaforo y todas las apuestas.
+ */
 typedef struct _Gestor_Ventanilla{
    int msqid_apuestas;
    int semid;
    apuestas_total *apuestas;
 } str_ventanilla;
 
+
+/**
+ * @brief Manejador de la señal SIGTERM.
+ *
+ * @param int sig: Señal
+ */
+void manejador_SIGTERM(int sig);
+
+/**
+ * @brief Manejador de la señal SIGUSR1.
+ *
+ * @param int sig: Señal
+ */
+void manejador_SIGUSR1(int sig);
+
+/**
+ * @brief Generador de un numero aleatorio entre 1 y 6.
+ *
+ * @return int: Entero aleatorio entre 1 y 6.
+ */
+int tirada_normal();
+
+/**
+ * @brief Generador de un numero aleatorio entre 1 y 7.
+ *
+ * @return int: Entero aleatorio entre 1 y 7.
+ */
+int tirada_ganadora();
+
+/**
+ * @brief Suma de dos numeros aleatorios entre 1 y 6.
+ *
+ * @return int: Entero entre 1 y 12.
+ */
+int tirada_remontadora();
+
+/**
+ * @brief Funcion que recoge el comportamiento de cada uno de los procesos caballo.
+ *
+ * @param int i: Identificador del caballo.
+ * @param int *fd: Descriptores de fichero para la comunicacion del proceso principal y los caballos.
+ * @param int *posiciones: Array de las posiciones de todos los caballos.
+ * @param int n_caballos: Numero de caballos.
+ * @return int: -1 si ha ocurrido algun error, 0 en caso de ejecucion normal.
+ */
+int caballos(int i, int *fd, int *posiciones, int n_caballos);
+
+/**
+ * @brief Funcion que recoge el comportamiento de cada uno de los hilos ventanilla.
+ *
+ * @param void *args: Argumentos que contienen una estructura de tipo str_ventanilla.
+ */
+void *ventanilla(void *arg);
+
+/**
+ * @brief Funcion que imprime la informacion de la carrera.
+ *
+ * @param char *estado: Mensaje con el estado de la carrera.
+ * @param int n_caballos: Numero de caballos.
+ * @param int *posiciones: Posiciones de los caballos.
+ * @param double *cotizaciones: Cotizaciones de cada caballo.
+ */
+void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cotizaciones);
+
+/**
+ * @brief Funcion que imprime la informacion de la carrera una vez finalizada.
+ *
+ * @param int n_caballos: Numero de caballos.
+ * @param int *posiciones: Posiciones de los caballos.
+ * @param double *ganancia: Ganancia de cada uno de los apostadores.
+ */
+ void imprimir_finalizada(int n_caballos, int *posiciones, double *ganancia);
+
+/**
+ * @brief Funcion main del ejercicio final
+ *
+ * El programa consiste en la creacion de los procesos monitor, gestor de apuestas, generador
+ * de puestas y los caballos. Mediante estos procesos y diversos recursos (semaforos, memoria 
+ * compartida, colas de mensajes, creacion de hilos, señales, etc) se simula una carrera
+ * de caballos. El programa termina cuando el usuario pulza Ctrl+C o un caballo llega a la meta.
+ *
+ * @return EXIT_SUCCESS si se han realizado correctamente todas las tareas, EXIT_FAILURE si
+ * se ha producido algun error al reservar recursos o al liberarlos.
+ */
 int main(int argc, char *argv[]){
 
    int i, j, k;
@@ -436,6 +540,10 @@ int main(int argc, char *argv[]){
 
       /* Liberacion de recursos */
       if(eliminar_shm(shmid_apuestas) == -1){
+         printf("Error al eliminar la region de memoria compartida.\n");
+         exit(EXIT_FAILURE);
+      }
+      if(eliminar_shm(shmid_posiciones) == -1){
          printf("Error al eliminar la region de memoria compartida.\n");
          exit(EXIT_FAILURE);
       }
