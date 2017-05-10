@@ -5,10 +5,13 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "../../senales/senales.h"
 #include "../../memcomp/memcomp.h"
 #include "../../mensajes/mensajes.h"
+#include "../../hilos/hilos.h"
+#include "../../semaforos/semaforos.h"
 
 #define N_KEY_CABALLOS 300
 #define N_KEY_APUESTAS 247
@@ -20,6 +23,9 @@ void manejador_SIGUSR1(int sig);
 int tirada_normal();
 int tirada_ganadora();
 int tirada_remontadora();
+
+int caballos(int i, int *fd, int *posiciones, int n_caballos);
+void *ventanilla(void *arg);
 
 /* Estructura para la comunicacion de los caballos al proceso principal */
 typedef struct _Caballos_Principal{
@@ -61,7 +67,7 @@ int main(int argc, char *argv[]){
    caballo_principal mensaje;
    apostador_gestor ap_generada;
    apuestas_total apuestas;
-   phtread_t *hilos;
+   pthread_t *hilos;
    void manejador_SIGUSR1();
    void manejador_SIGTERM();
 
@@ -256,7 +262,7 @@ int main(int argc, char *argv[]){
 
       /* (Fer) Creacion hilos */
       for (j = 0; j < n_ventanillas; j++) {
-         if (crear_hilo(&hilos[j], ventanilla, (void*) &str)) == -1) {
+         if (crear_hilo(&hilos[j], ventanilla, (void*) &str) == -1) {
             printf("Error al crear hilos.\n");
             exit(EXIT_FAILURE);
          }
@@ -334,7 +340,7 @@ int main(int argc, char *argv[]){
    } else {
       /* (Fer) Esto son ya todos los procesos de los caballos. Lanzan la funcion caballos,
       mas abajo */
-      if (caballos(i, fd, posiciones) == -1){
+      if (caballos(i, fd, posiciones, n_caballos) == -1){
          printf("Fallo en caballos %d.\n", i);
          exit(EXIT_FAILURE);
       }
@@ -348,8 +354,14 @@ es SIGINT, podemos hacer un manejador de SIGINT que mande SIGTERM a todos los pr
 donde el manejador de SIGTERM haga lo de poner una variable a 1 cuando al principio
 estaba en 0, y que esto sea la condicion de salida de los bucles */
 void manejador_SIGTERM(int sig){
+   // (Blanca) terminar deberia ser una variable global si quieres hacerlo asi
+   // pero como los caballos no reservan ningun tipo de memoria ni nada,
+   // creo que podriamos poner exit(EXIT_SUCCESS) no? 
+  /*
    terminar = 1;
    return;
+   */
+   exit(EXIT_SUCCESS);
 }
 
 void manejador_SIGUSR1(int sig){
@@ -374,11 +386,12 @@ int tirada_remontadora(){
 al proceso principal y comienzo el bucle, donde esta lo que habias hecho ya tu con
 algunas correcciones. Cuando sale del bucle (terminar=1) se retorna guay, si no con
 error */
-int caballos(int i, int *fd, int *posiciones) {
+int caballos(int i, int *fd, int *posiciones, int n_caballos) {
    /* Caballitos */
 
    int max, min, j, tirada, msqid_tiradas, terminar;
    caballo_principal mensaje;
+   int caballos;
 
    /* (Fer) Valor para la finalización controlada del bucle */
    terminar = 0;
@@ -403,7 +416,8 @@ int caballos(int i, int *fd, int *posiciones) {
       min = INT_MAX;
 
       /* Cálculo del caballo líder y último */
-      for(j = 0; j < n_caballos; j++){
+      caballos = n_caballos;
+      for(j = 0; j < caballos; j++){
          if(max < posiciones[j]){
             max = posiciones[j];
          }
@@ -452,7 +466,7 @@ que no escriban varias ventanillas a la vez, porque si no se puede joder el calc
 algunas cosas. De hecho, en la funcion de los caballos estoy muy rayado porque tengo
 la sensacion de que hace falta algun tipo de sincronizacion, aunque como al fin y al
 cabo la comunicacion va por tuberias y mensajes igual no hace falta nada mas... veremos */
-void* ventanilla(void *arg) {
+void *ventanilla(void *arg) {
    str_ventanilla *str = (str_ventanilla*) arg;
    int apostador, caballo;
    double cantidad;
@@ -469,7 +483,8 @@ void* ventanilla(void *arg) {
 
       if (Down_Semaforo(semid, 0, 0) == -1) {
          printf("Error al ejecutar función Down_Semaforo.\n");
-         return ERROR;
+         exit(EXIT_FAILURE);
+         // (BLanca)  Tenias puesto return ERROR;      
       }
 
       str->apuestas->total += cantidad;
@@ -479,7 +494,8 @@ void* ventanilla(void *arg) {
 
       if (Up_Semaforo(semid, 0, 0) == -1) {
          printf("Error al ejecutar función Up_Semaforo.\n");
-         return ERROR;
+         exit(EXIT_FAILURE);
+         // (BLanca)  Tenias puesto return ERROR;
       }
    }
 }
