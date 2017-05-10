@@ -1,14 +1,14 @@
 /**
- * @brief Sistemas Operativos: Practica 3, ejercicio 4
+ * @brief Sistemas Operativos: Practica 4, ejercicio 2
  *
  * Grupo 2201, Pareja 10.
  * En este modulo se ha implementado la cabecera para la implementacion
- * del ejercicio 4 de la practica.
+ * de la llibreria de semaforos.
  *
  * @file semaforos.h
  * @author Blanca Martín (blanca.martins@estudiante.uam.es)
  * @author Fernando Villar (fernando.villarg@estudiante.uam.es)
- * @date 07-04-2017
+ * @date 12-05-2017
  */
 #ifndef SEMAFOROS_H
 #define SEMAFOROS_H

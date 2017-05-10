@@ -1,15 +1,14 @@
 /**
- * @brief Sistemas Operativos: Practica 3, ejercicio 4
+ * @brief Sistemas Operativos: Practica 4, ejercicio 2
  *
  * Grupo 2201, Pareja 10.
- * En este modulo se ha implementado el codigo del cuarto
- * ejercicio de la tercera practica, que consiste en la creacion
+ * Este modulo consiste en la creacion
  * de una libreria que simplifique el uso de los semaforos.
  *
  * @file semaforos.c
  * @author Blanca Martín (blanca.martins@estudiante.uam.es)
  * @author Fernando Villar (fernando.villarg@estudiante.uam.es)
- * @date 07-04-2017
+ * @date 12-05-2017
  */
 #include <stdio.h>
 #include <stdlib.h>
