@@ -206,16 +206,6 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
    }
 
-<<<<<<< HEAD
-   /* No tengo ni zorra de lo que estoy haciendo */
-   /* (Fer) Pues bastante idea tenías. He añadido todas las cosas extra que requieren
-   reserva de memoria: los hilos y los arrays con datos de apuestas. Faltan. */
-   pid_procesos = (pid_t *) malloc(sizeof(pid_t) * (n_caballos+3));
-   posiciones = (int *) malloc(sizeof(int) * n_caballos);
-   hilos = (pthread_t *) malloc(sizeof(pthread_t) * n_ventanillas);
-
-=======
->>>>>>> cae975adbf7357c25611daf9765400a0d1ca5dd2
    /* Creacion de los procesos */
    /* (Fer) He sacado del bucle casi todo. He dejado la creacion de las tuberias (no hacia
       falta el array como hablamos en clase, se hace asi, creando una antes de cada
@@ -359,7 +349,6 @@ int main(int argc, char *argv[]){
          }
       }
 
-<<<<<<< HEAD
       /* Liberacion de recursos */
       if(salir_shm((char*) &apuestas) == -1){
          printf("Error al desvincularse de la memoria compartida.\n");
@@ -368,12 +357,6 @@ int main(int argc, char *argv[]){
       free(apuestas.apostado);
       free(apuestas.cotizacion);
       free(apuestas.ganancia);
-=======
-      if (salir_shm((char*) &apuestas) == -1) {
-         printf("Error al salir de memoria compartida.\n");
-         exit(EXIT_FAILURE);
-      }
->>>>>>> cae975adbf7357c25611daf9765400a0d1ca5dd2
 
       exit(EXIT_SUCCESS);
       /* Una movida bastisima */
@@ -450,7 +433,10 @@ int main(int argc, char *argv[]){
             }
          }
       }
-<<<<<<< HEAD
+
+      printf("%d", posiciones[j]);
+      fflush(stdout);
+
       /* Liberacion de recursos */
       if(eliminar_shm(shmid_apuestas) == -1){
          printf("Error al eliminar la region de memoria compartida.\n");
@@ -468,19 +454,6 @@ int main(int argc, char *argv[]){
       free(posiciones);
       free(hilos);
 
-
-=======
-
-      printf("%d", posiciones[j]);
-      fflush(stdout);
-
-      if (salir_shm((char*) posiciones) == -1) {
-         printf("Error al salir de memoria compartida.\n");
-         exit(EXIT_FAILURE);
-      }
-
-      eliminar_cm(msqid);
->>>>>>> cae975adbf7357c25611daf9765400a0d1ca5dd2
    } else {
       /* (Fer) Esto son ya todos los procesos de los caballos. Lanzan la funcion caballos,
       mas abajo */
