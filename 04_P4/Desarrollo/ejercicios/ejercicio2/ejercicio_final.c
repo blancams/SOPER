@@ -20,6 +20,7 @@
 #define N_KEY_SEMAFORO 72345
 #define N_KEY_POSICION 334
 #define MAX_APUESTA 500
+#define MAX_CHAR 512
 
 void manejador_SIGTERM(int sig);
 void manejador_SIGUSR1(int sig);
@@ -30,6 +31,8 @@ int tirada_remontadora();
 
 int caballos(int i, int *fd, int *posiciones, int n_caballos);
 void *ventanilla(void *arg);
+void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cotizaciones);
+void imprimir_finalizada(int n_caballos, int *posiciones, double *ganancia);
 
 /* Estructura para la comunicacion de los caballos al proceso principal */
 typedef struct _Caballos_Principal{
@@ -74,8 +77,6 @@ int main(int argc, char *argv[]){
    apostador_gestor ap_generada;
    apuestas_total apuestas;
    pthread_t *hilos;
-   void manejador_SIGUSR1();
-   void manejador_SIGTERM();
 
    /* Comprobación de los argumentos de entrada */
 	if(argc != 5){
@@ -216,6 +217,9 @@ int main(int argc, char *argv[]){
          if(pipe(fd)==-1){
             printf("Error creando la tubería.\n");
             exit(EXIT_FAILURE);
+         } else {
+            printf("Lo hace.\n");
+            printf("%d %d\n", fd[0], fd[1]);
          }
       }
 
@@ -244,8 +248,8 @@ int main(int argc, char *argv[]){
    /* (Fer) Aqui no he tocado nada */
    if(i == 0){
       /* Proceso monitor */
-
       /* Debera tener acceso a todos los mensajes, las areas de memoria compartida, etc */
+      char estado[MAX_CHAR];
 
       /* (Fer) Acceso a cola de mensajes */
       if (acceder_shm(shmid_apuestas, (char*) &apuestas) == -1) {
@@ -259,10 +263,20 @@ int main(int argc, char *argv[]){
       }
 
       for (j = 0; j < 15; j++) {
-         printf("Quedan %d segundos.\n", 15-j);
+         sprintf(estado, "Estado de la carrera: faltan %d segundos.", 15-j);
+         imprimir_carrera(estado, n_caballos, posiciones, apuestas.cotizacion);
          usleep(1000);
       }
 
+      sprintf(estado, "Estado de la carrera: comenzada.");
+
+      while(1) {
+         imprimir_carrera(estado, n_caballos, posiciones, apuestas.cotizacion);
+      }
+
+      imprimir_finalizada(n_caballos, posiciones, apuestas.ganancia);
+
+      exit(EXIT_SUCCESS);
       /* Mostrar el status de la carrera : comenzada? */
       /* Posicion de los caballos */
       /* Estados de las apuestas */
@@ -331,7 +345,7 @@ int main(int argc, char *argv[]){
          }
       }
 
-      if (salir_shm((char*) &apuestas)) == -1) {
+      if (salir_shm((char*) &apuestas) == -1) {
          printf("Error al salir de memoria compartida.\n");
          exit(EXIT_FAILURE);
       }
@@ -409,7 +423,7 @@ int main(int argc, char *argv[]){
       printf("%d", posiciones[j]);
       fflush(stdout);
 
-      if (salir_shm((char*) posiciones)) == -1) {
+      if (salir_shm((char*) posiciones) == -1) {
          printf("Error al salir de memoria compartida.\n");
          exit(EXIT_FAILURE);
       }
@@ -584,4 +598,50 @@ void *ventanilla(void *arg) {
          // (BLanca)  Tenias puesto return ERROR;
       }
    }
+}
+
+void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cotizaciones) {
+   int i;
+
+   printf("#################################\n");
+   printf("%s\n", estado);
+   if (!strcmp("Estado de la carrera: comenzada.", estado)) {
+      for (i = 0; i < n_caballos; i++) {
+         printf("Posición del caballo %d: %d\n", i+1, posiciones[i]);
+      }
+   } else {
+      for (i = 0; i < n_caballos; i++) {
+         printf("Cotización del caballo %d: %lf\n", i+1, cotizaciones[i]);
+      }
+   }
+   printf("#################################\n");
+
+}
+
+void imprimir_finalizada(int n_caballos, int *posiciones, double *ganancia) {
+   int i, max1, max2, max3, ind1, ind2, ind3;
+
+   printf("#################################\n");
+   printf("Carrera finalizada.\n");
+   for (i = 0, max1 = 0, max2 = 0, max3 = 0; i < n_caballos; i++) {
+      if (max3 < posiciones[i]) {
+         max3 = posiciones[i];
+         ind3 = i;
+         if (max2 < posiciones[i]) {
+            max3 = max2;
+            ind3 = ind2;
+            max2 = posiciones[i];
+            ind2 = i;
+            if (max1 < posiciones[i]) {
+               max2 = max1;
+               ind2 = ind1;
+               max1 = posiciones[i];
+               ind1 = i;
+            }
+         }
+      }
+   }
+   printf("Primer caballo: %d - %d\n", ind1+1, max1);
+   printf("Segundo caballo: %d - %d\n", ind2+1, max2);
+   printf("Tercer caballo: %d - %d\n", ind3+1, max3);
 }
