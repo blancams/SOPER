@@ -194,9 +194,6 @@ int main(int argc, char *argv[]){
    reserva de memoria: los hilos y los arrays con datos de apuestas. Faltan. */
    pid_procesos = (pid_t *) malloc(sizeof(pid_t) * (n_caballos+3));
    posiciones = (int *) malloc(sizeof(int) * n_caballos);
-   apuestas.apostado = (double *) malloc(sizeof(double) * n_caballos);
-   apuestas.ganancia = (double *) malloc(sizeof(double) * n_apostadores);
-   apuestas.cotizacion = (double *) malloc(sizeof(double) * n_caballos);
    hilos = (pthread_t *) malloc(sizeof(pthread_t) * n_ventanillas);
 
    /* Creacion de los procesos */
@@ -258,6 +255,10 @@ int main(int argc, char *argv[]){
       proceso principal. */
       str_ventanilla str;
 
+      apuestas.apostado = (double *) malloc(sizeof(double) * n_caballos);
+      apuestas.ganancia = (double *) malloc(sizeof(double) * n_apostadores);
+      apuestas.cotizacion = (double *) malloc(sizeof(double) * n_caballos);
+
       /* (Fer) Acceso a memoria compartida */
       if (acceder_shm(shmid_apuestas, (char*) &apuestas) == -1) {
          printf("Error al acceder a memoria compartida en gestor.\n");
@@ -309,6 +310,15 @@ int main(int argc, char *argv[]){
          }
       }
 
+      /* Liberacion de recursos */
+      if(salir_shm((char*) &apuestas) == -1){
+         printf("Error al desvincularse de la memoria compartida.\n");
+         exit(EXIT_FAILURE);
+      }
+      free(apuestas.apostado);
+      free(apuestas.cotizacion);
+      free(apuestas.ganancia);
+
       exit(EXIT_SUCCESS);
       /* Una movida bastisima */
       /* (Fer) Correcto */
@@ -316,6 +326,12 @@ int main(int argc, char *argv[]){
       /* (Fer) Aqui no he hecho nada aun tampoco */
       char nom_apostador[13];
       /* Proceso apostador */
+
+      /* (Fer) Acceso a cola de mensajes */
+      if(crear_cm(&msqid, N_KEY_APUESTAS) == -1){
+         printf("Fallo en el acceso a la cola de mensajes 2.\n");
+         exit(EXIT_FAILURE);
+      }
 
       while(1) {
          usleep(1000);
@@ -374,6 +390,24 @@ int main(int argc, char *argv[]){
             }
          }
       }
+      /* Liberacion de recursos */
+      if(eliminar_shm(shmid_apuestas) == -1){
+         printf("Error al eliminar la region de memoria compartida.\n");
+         exit(EXIT_FAILURE);
+      }
+      if(Borrar_Semaforo(semid) == -1){
+         printf("Error al eliminar el semaforo.\n");
+         exit(EXIT_FAILURE);
+      }
+      if(eliminar_cm(msqid) == -1){
+         printf("Error al eliminar la cola de mensajes.\n");
+         exit(EXIT_FAILURE);
+      }
+      free(pid_procesos); 
+      free(posiciones);
+      free(hilos);
+
+
    } else {
       /* (Fer) Esto son ya todos los procesos de los caballos. Lanzan la funcion caballos,
       mas abajo */

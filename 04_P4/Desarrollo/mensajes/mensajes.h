@@ -13,9 +13,9 @@
 #ifndef MENSAJES_H
 #define MENSAJES_H
 
-#define OK 2
-#define ERROR -1
-#define MAX_CHAR 512
+#define OK 2						/*!< Valor para correcto retorno de funciones */
+#define ERROR -1					/*!< Valor para incorrecto retorno de funciones */
+#define MAX_CHAR 512				/*!< Maximo numero de caracteres */
 
 /*
 typedef struct _Mensaje {

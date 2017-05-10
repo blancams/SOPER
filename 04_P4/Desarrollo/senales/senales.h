@@ -13,8 +13,8 @@
 #ifndef SENALES_H
 #define SENALES_H
 
-#define OK 2
-#define ERROR -1
+#define OK 2						/*!< Valor para correcto retorno de funciones */
+#define ERROR -1					/*!< Valor para incorrecto retorno de funciones */
 
 /**
  * @brief Envia una señal a un proceso.

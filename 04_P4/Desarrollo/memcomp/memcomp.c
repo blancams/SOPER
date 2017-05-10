@@ -18,8 +18,6 @@
 
 #include "memcomp.h"
 
-#define OK 2
-#define ERROR -1
 #define FILEKEY "/bin/cat"    /*!< Fichero para la generacion de la clave */
 
 int crear_shm(int size, int *shmid, int key) {
