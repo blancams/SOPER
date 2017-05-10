@@ -146,9 +146,6 @@ int main(int argc, char *argv[]){
    reserva de memoria: los hilos y los arrays con datos de apuestas. Faltan. */
    pid_procesos = (pid_t *) malloc(sizeof(pid_t) * (n_caballos+3));
    posiciones = (int *) malloc(sizeof(int) * n_caballos);
-   apuestas.apostado = (double *) malloc(sizeof(double) * n_caballos);
-   apuestas.ganancia = (double *) malloc(sizeof(double) * n_apostadores);
-   apuestas.cotizacion = (double *) malloc(sizeof(double) * n_caballos);
    hilos = (pthread_t *) malloc(sizeof(pthread_t) * n_ventanillas);
 
    /* Asignacion del manejador de terminacion */
