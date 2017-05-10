@@ -18,6 +18,7 @@
 #define N_KEY_APUESTAS 247
 #define N_KEY_ACCGTAPU 275
 #define N_KEY_SEMAFORO 72345
+#define N_KEY_POSICION 334
 #define MAX_APUESTA 500
 
 void manejador_SIGTERM(int sig);
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]){
    int i, j, k;
    int n_caballos, longitud, n_apostadores, n_ventanillas;
    int pid;
-   int msqid, shmid_apuestas, semid;
+   int msqid, shmid_apuestas, shmid_posiciones, semid;
    int fd[2];
    pid_t * pid_procesos;
    int *posiciones;
@@ -139,6 +140,16 @@ int main(int argc, char *argv[]){
 
    printf("Pasa de asignaciones.\n");
 
+   /* No tengo ni zorra de lo que estoy haciendo */
+   /* (Fer) Pues bastante idea tenías. He añadido todas las cosas extra que requieren
+   reserva de memoria: los hilos y los arrays con datos de apuestas. Faltan. */
+   pid_procesos = (pid_t *) malloc(sizeof(pid_t) * (n_caballos+3));
+   posiciones = (int *) malloc(sizeof(int) * n_caballos);
+   apuestas.apostado = (double *) malloc(sizeof(double) * n_caballos);
+   apuestas.ganancia = (double *) malloc(sizeof(double) * n_apostadores);
+   apuestas.cotizacion = (double *) malloc(sizeof(double) * n_caballos);
+   hilos = (pthread_t *) malloc(sizeof(pthread_t) * n_ventanillas);
+
    /* Asignacion del manejador de terminacion */
    if (crear_manej(SIGTERM, &manejador_SIGTERM) == -1) {
       printf("Error al crear el manejador.\n");
@@ -175,6 +186,11 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
    }
 
+   if(crear_shm(sizeof(posiciones), &shmid_posiciones, N_KEY_POSICION) == -1) {
+      printf("Fallo en la creacion de memoria compartida.\n");
+      exit(EXIT_FAILURE);
+   }
+
    /* (Fer) Creacion del array de semaforos (de momento con uno solo, puede que
       acabe habiendo mas). */
    if (Crear_Semaforo(N_KEY_SEMAFORO, 1, &semid) == -1) {
@@ -188,16 +204,6 @@ int main(int argc, char *argv[]){
       printf("Error al inicializar los semáforos.\n");
       exit(EXIT_FAILURE);
    }
-
-   /* No tengo ni zorra de lo que estoy haciendo */
-   /* (Fer) Pues bastante idea tenías. He añadido todas las cosas extra que requieren
-   reserva de memoria: los hilos y los arrays con datos de apuestas. Faltan. */
-   pid_procesos = (pid_t *) malloc(sizeof(pid_t) * (n_caballos+3));
-   posiciones = (int *) malloc(sizeof(int) * n_caballos);
-   apuestas.apostado = (double *) malloc(sizeof(double) * n_caballos);
-   apuestas.ganancia = (double *) malloc(sizeof(double) * n_apostadores);
-   apuestas.cotizacion = (double *) malloc(sizeof(double) * n_caballos);
-   hilos = (pthread_t *) malloc(sizeof(pthread_t) * n_ventanillas);
 
    /* Creacion de los procesos */
    /* (Fer) He sacado del bucle casi todo. He dejado la creacion de las tuberias (no hacia
@@ -241,6 +247,22 @@ int main(int argc, char *argv[]){
 
       /* Debera tener acceso a todos los mensajes, las areas de memoria compartida, etc */
 
+      /* (Fer) Acceso a cola de mensajes */
+      if (acceder_shm(shmid_apuestas, (char*) &apuestas) == -1) {
+         printf("Error al acceder a memoria compartida en gestor.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      if (acceder_shm(shmid_posiciones, (char*) posiciones) == -1) {
+         printf("Error al acceder a memoria compartida en gestor.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      for (j = 0; j < 15; j++) {
+         printf("Quedan %d segundos.\n", 15-j);
+         usleep(1000);
+      }
+
       /* Mostrar el status de la carrera : comenzada? */
       /* Posicion de los caballos */
       /* Estados de las apuestas */
@@ -265,7 +287,7 @@ int main(int argc, char *argv[]){
       }
 
       /* (Fer) Acceso a cola de mensajes */
-      if(crear_cm(&msqid, N_KEY_APUESTAS) == -1){
+      if(crear_cm(&msqid, N_KEY_CABALLOS) == -1){
          printf("Fallo en el acceso a la cola de mensajes 2.\n");
          exit(EXIT_FAILURE);
       }
@@ -309,6 +331,11 @@ int main(int argc, char *argv[]){
          }
       }
 
+      if (salir_shm((char*) &apuestas)) == -1) {
+         printf("Error al salir de memoria compartida.\n");
+         exit(EXIT_FAILURE);
+      }
+
       exit(EXIT_SUCCESS);
       /* Una movida bastisima */
       /* (Fer) Correcto */
@@ -318,11 +345,10 @@ int main(int argc, char *argv[]){
       /* Proceso apostador */
 
       while(1) {
-         usleep(1000);
+         usleep(100);
 
          ap_generada.tipo = 2;
-         sprintf(nom_apostador, "%d", rand() % n_apostadores);
-         strcat("Apostador-", nom_apostador);
+         sprintf(nom_apostador, "Apostador-%d", rand() % n_apostadores + 1);
          strcpy(ap_generada.nombre, nom_apostador);
          ap_generada.caballo = rand() % n_caballos;
          ap_generada.apuesta = ((double)rand() / (double)RAND_MAX) * MAX_APUESTA;
@@ -341,11 +367,18 @@ int main(int argc, char *argv[]){
          los cambios hechos en el resto del codigo. Hay que arreglar la parte de la
          liberacion de recursos pero meh, al final. */
       close(fd[0]);
+
+      if (acceder_shm(shmid_posiciones, (char*) posiciones) == -1) {
+         printf("Error al acceder a memoria compartida en gestor.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      /* Inicializacion de las posiciones de cada caballo ? */
+      for(j = 0; j < n_caballos; j++){
+         posiciones[j] = 0;
+      }
+
       while(1) {
-         /* Inicializacion de las posiciones de cada caballo ? */
-         for(j = 0; j < n_caballos; j++){
-            posiciones[j] = 0;
-         }
          /* Escribimos para cada caballo? No tiene sentido esto no ?  No me acuerdo de tuberias sorry */
          write(fd[1], posiciones, sizeof(posiciones));
 
@@ -368,12 +401,20 @@ int main(int argc, char *argv[]){
          for(j = 0; j < n_caballos; j++){
             if(posiciones[j] >= longitud) {
             /* Pues terminamos */
-            printf("%d", posiciones[j]);
-            fflush(stdout);
-            eliminar_cm(msqid);
+            break;
             }
          }
       }
+
+      printf("%d", posiciones[j]);
+      fflush(stdout);
+
+      if (salir_shm((char*) posiciones)) == -1) {
+         printf("Error al salir de memoria compartida.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      eliminar_cm(msqid);
    } else {
       /* (Fer) Esto son ya todos los procesos de los caballos. Lanzan la funcion caballos,
       mas abajo */
@@ -515,12 +556,12 @@ void *ventanilla(void *arg) {
          exit(EXIT_FAILURE);
       }
 
-      apostador = apuesta.nombre[10] - '0';
-      if (apostador == 1) {
+      apostador = apuesta.nombre[10] - '1';
+      if (apostador == 0) {
          if (apuesta.nombre[11] == '\0') {
-            apostador = 10;
+            apostador = 9;
          } else {
-            apostador = 1;
+            apostador = 0;
          }
       }
       caballo = apuesta.caballo;
