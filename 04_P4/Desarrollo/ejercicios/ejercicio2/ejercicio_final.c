@@ -363,6 +363,12 @@ int main(int argc, char *argv[]){
          exit(EXIT_FAILURE);
       }
 
+      /* Pause para sincronizar gestor con monitor al empezar la ejecucion */
+      if(pause() != -1){
+         printf("Fallo en pause de monitor 1.\n");
+         exit(EXIT_FAILURE);
+      }
+
       for (j = 0; j < 15; j++) {
          sprintf(estado, "Estado de la carrera: faltan %d segundos.", 15-j);
          imprimir_carrera(estado, n_caballos, posiciones, apuestas.cotizacion);
@@ -372,10 +378,34 @@ int main(int argc, char *argv[]){
       sprintf(estado, "Estado de la carrera: comenzada.");
 
       while(1) {
+         if(pause() != -1){
+            printf("Fallo en pause de monitor 3.\n");
+            exit(EXIT_FAILURE);
+         }
          imprimir_carrera(estado, n_caballos, posiciones, apuestas.cotizacion);
       }
 
+      if (alarm(15) == -1) {
+         printf("Fallo al crear alarma.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      if (pause() != -1) {
+         printf("Fallo en pause de gestor.\n");
+         return -1;
+      }
+
       imprimir_finalizada(n_caballos, posiciones, apuestas.ganancia);
+
+      if (salir_shm((char*) &apuestas) == -1) {
+         printf("Error al salir de memoria compartida en monitor.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      if (salir_shm((char*) posiciones) == -1) {
+         printf("Error al salir de memoria compartida en monitor.\n");
+         exit(EXIT_FAILURE);
+      }
 
       exit(EXIT_SUCCESS);
       /* Mostrar el status de la carrera : comenzada? */
@@ -386,6 +416,38 @@ int main(int argc, char *argv[]){
       /* Tres primeros puestos */
       /* Resultados de las apuestas */
    } else if(i == 1){
+      /* (Fer) Aqui no he hecho nada aun tampoco */
+      char nom_apostador[13];
+      /* Proceso apostador */
+
+      if(pause() != -1){
+         printf("Fallo en pause de monitor.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      /* (Fer) Acceso a cola de mensajes */
+      if(crear_cm(&msqid, N_KEY_APUESTAS) == -1){
+         printf("Fallo en el acceso a la cola de mensajes 2.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      while(1) {
+         usleep(100);
+
+         ap_generada.tipo = 2;
+         sprintf(nom_apostador, "Apostador-%d", rand() % n_apostadores + 1);
+         strcpy(ap_generada.nombre, nom_apostador);
+         ap_generada.caballo = rand() % n_caballos;
+         ap_generada.apuesta = ((double)rand() / (double)RAND_MAX) * MAX_APUESTA;
+
+         if (enviar_m(msqid, &ap_generada) == -1) {
+            printf("Error al enviar mensaje desde generador.\n");
+            exit(EXIT_FAILURE);
+         }
+      }
+
+      /* Cada 0,1 segundos genera una apuesta y envia el mensaje al gestor */
+   } else if(i == 2){
       /* (Fer) Aqui hay cosas. Desde este proceso (el gestor de apuestas) accedo a la
       memoria compartida para compartir info con el monitor; accedo a la cola de
       mensajes con la que nos comunicamos con el generador de apuestas; creo la
@@ -417,11 +479,17 @@ int main(int argc, char *argv[]){
       str.apuestas = &apuestas;
 
       /* (Fer) Inicializacion info apuestas */
+      apuestas.total = 1.0 * n_caballos;
       for (j = 0, k = 0; j < n_caballos || k < n_apostadores; j++, k++) {
          apuestas.apostado[j] = 1.0;
+         apuestas.cotizacion[j] = apuestas.total;
          apuestas.ganancia[k] = 0.0;
       }
-      apuestas.total = 1.0 * n_caballos;
+
+      if (enviar_senal(pid_procesos[0], SIGUSR1) == -1) {
+         printf("Error al enviar senal de gestor a monitor.\n");
+         exit(EXIT_FAILURE);
+      }
 
       /* (Fer) Creacion hilos */
       for (j = 0; j < n_ventanillas; j++) {
@@ -429,6 +497,11 @@ int main(int argc, char *argv[]){
             printf("Error al crear hilos.\n");
             exit(EXIT_FAILURE);
          }
+      }
+
+      if (enviar_senal(pid_procesos[2], SIGUSR1) == -1) {
+         printf("Error al enviar senal de gestor a monitor.\n");
+         exit(EXIT_FAILURE);
       }
 
       /* (Fer) Pausa */
@@ -462,33 +535,6 @@ int main(int argc, char *argv[]){
       exit(EXIT_SUCCESS);
       /* Una movida bastisima */
       /* (Fer) Correcto */
-   } else if(i == 2){
-      /* (Fer) Aqui no he hecho nada aun tampoco */
-      char nom_apostador[13];
-      /* Proceso apostador */
-
-      /* (Fer) Acceso a cola de mensajes */
-      if(crear_cm(&msqid, N_KEY_APUESTAS) == -1){
-         printf("Fallo en el acceso a la cola de mensajes 2.\n");
-         exit(EXIT_FAILURE);
-      }
-
-      while(1) {
-         usleep(100);
-
-         ap_generada.tipo = 2;
-         sprintf(nom_apostador, "Apostador-%d", rand() % n_apostadores + 1);
-         strcpy(ap_generada.nombre, nom_apostador);
-         ap_generada.caballo = rand() % n_caballos;
-         ap_generada.apuesta = ((double)rand() / (double)RAND_MAX) * MAX_APUESTA;
-
-         if (enviar_m(msqid, &ap_generada) == -1) {
-            printf("Error al enviar mensaje desde generador.\n");
-            exit(EXIT_FAILURE);
-         }
-      }
-
-      /* Cada 0,1 segundos genera una apuesta y envia el mensaje al gestor */
    } else if(i == n_caballos + 3){
       /* Proceso principal */
       /* (Fer) Aqui he: cerrado la tuberia y creado un bucle para la simulacion, donde
@@ -507,6 +553,19 @@ int main(int argc, char *argv[]){
          posiciones[j] = 0;
       }
 
+      if (alarm(15) == -1) {
+         printf("Fallo al crear alarma.\n");
+         exit(EXIT_FAILURE);
+      }
+
+      if (pause() != -1) {
+         printf("Fallo en pause de gestor.\n");
+         return -1;
+      }
+
+      waitpid(pid_procesos[1], NULL, 0);
+      waitpid(pid_procesos[2], NULL, 0);
+
       while(1) {
          /* Escribimos para cada caballo? No tiene sentido esto no ?  No me acuerdo de tuberias sorry */
          write(fd[1], posiciones, sizeof(posiciones));
@@ -518,6 +577,7 @@ int main(int argc, char *argv[]){
                exit(EXIT_FAILURE);
             }
          }
+
          for(j = 0; j < n_caballos; j++){
             if(recibir_m(msqid, &mensaje, 1) == -1){
                printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
@@ -525,6 +585,7 @@ int main(int argc, char *argv[]){
             }
             posiciones[j] += mensaje.tirada;
          }
+
          /* Algun caballo ha llegado ya a la meta ? Este ejercicio no tiene sentido en eficiencia
          (o lo estoy haciendo tremendamente mal) */
          for(j = 0; j < n_caballos; j++){
@@ -532,6 +593,13 @@ int main(int argc, char *argv[]){
             /* Pues terminamos */
             break;
             }
+         }
+
+         /* Aqui tiene que venir la captura de SIGINT */
+
+         if (enviar_senal(pid_procesos[0], SIGUSR1) == -1) {
+            printf("Fallo al enviar la señal desde el proceso principal al monitor.\n");
+            exit(EXIT_FAILURE);
          }
       }
 
@@ -555,7 +623,7 @@ int main(int argc, char *argv[]){
          printf("Error al eliminar la cola de mensajes.\n");
          exit(EXIT_FAILURE);
       }
-      free(pid_procesos); 
+      free(pid_procesos);
       free(posiciones);
       free(hilos);
 
