@@ -139,28 +139,18 @@ void *ventanilla(void *arg) {
 
    str = (str_ventanilla*) arg;
 
-   printf("Info: Msqid - %d, Semid - %d, Total - %lf\n", str->msqid, str->semid, str->apuestas->total);
-
    while(1) {
-      printf("Checkerino -1\n");
-
-      usleep(10000);
-
-      printf("Checkerino 0\n");
-
       if (impedir_cancelar() == -1) {
          printf("Error al deshabilitar cancelacion de hilo.\n");
          salir_hilo();
       }
 
-      printf("Checkerino 1\n");
+      usleep(10000);
 
       if(recibir_m(str->msqid, (void *) &apuesta, 0, sizeof(apostador_gestor) - sizeof(long)) == -1){
          printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
          salir_hilo();
       }
-
-      printf("Checkerino 2\n");
 
       printf("Info de apuesterina: %s %d %lf\n", apuesta.nombre, apuesta.caballo, apuesta.apuesta);
 
@@ -180,8 +170,6 @@ void *ventanilla(void *arg) {
          salir_hilo();
       }
 
-      printf("Entra alguna vez?\n");
-
       str->apuestas->total += cantidad;
       str->apuestas->apostado[caballo] += cantidad;
       str->apuestas->cotizacion[caballo] = str->apuestas->total / str->apuestas->apostado[caballo];
@@ -191,8 +179,6 @@ void *ventanilla(void *arg) {
          printf("Error al ejecutar función Up_Semaforo.\n");
          salir_hilo();
       }
-
-      printf("Hola?\n");
 
       if (permitir_cancelar() == -1) {
          printf("Error al habilitar cancelacion de hilo.\n");

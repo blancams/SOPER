@@ -20,11 +20,11 @@
  */
 int caballo(int i, int fd, int n_caballos, int key) {
    int max, min, j, tirada, msqid, signvalue;
-   int *posiciones = NULL;
+   int *posiciones;
    sigset_t sset;
    caballo_principal mensaje;
 
-   srand(time(NULL));
+   srand((unsigned) time(NULL)*getpid());
 
    if(crear_cm(&msqid, key)== -1){
       printf("Fallo en la creacion de la cola de mensajes (caballos).\n");
@@ -35,8 +35,6 @@ int caballo(int i, int fd, int n_caballos, int key) {
       printf("Apostador: Error al crear la mascara de senales.\n");
       exit(ERROR);
    }
-
-   printf("Caballo llega aquí?\n");
 
    while(1) {
       if(pause() != -1){
@@ -52,6 +50,8 @@ int caballo(int i, int fd, int n_caballos, int key) {
       if (signvalue) {
          break;
       }
+
+      posiciones = (int *) malloc(sizeof(int) * n_caballos);
 
       read(fd, posiciones, sizeof(int) * n_caballos);
       max = 0;

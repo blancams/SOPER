@@ -244,8 +244,8 @@ int main(int argc, char *argv[]){
 
          pid_procesos[i] = pid;
          if (i > 2) {
-            tuberias[i-3] = fd[0];
-            tuberias[i-2] = fd[1];
+            tuberias[2*i-6] = fd[0];
+            tuberias[2*i-5] = fd[1];
          }
 
       }
@@ -295,7 +295,7 @@ int main(int argc, char *argv[]){
          posiciones[j] = 0;
       }
 
-      for (j = 0; j < n_caballos*2; j++) {
+      for (j = 0; j < n_caballos*2; j = j + 2) {
          close(tuberias[j]);
       }
 
@@ -351,51 +351,35 @@ int main(int argc, char *argv[]){
       printf("Empieza todo.\n");
 
       while(1) {
-         printf("Check 1.\n");
          /* Escribimos para cada caballo? No tiene sentido esto no ?  No me acuerdo de tuberias sorry */
          for (j = 1; j < n_caballos*2; j = j + 2) {
-            printf("Antes de escribir en tuberia fd[%d] = %d\n", j, tuberias[j]);
-            write(tuberias[j], posiciones, sizeof(int) * n_caballos);
-            printf("Despues de escribir en tuberia fd[%d] = %d\n", j, tuberias[j]);
+            write(tuberias[j], (void *) posiciones, sizeof(int) * n_caballos);
          }
 
          /* Le mandamos una señal a cada caballo ?  Como ?  Array de pids guarro ? */
          for(j = 3; j < n_caballos+3; j++){
-            printf("Antes de enviar señal a caballo %d\n", j-3);
             if(enviar_senal(pid_procesos[j], SIGUSR1) == -1){
                printf("Fallo al enviar la señal desde el proceso principal a los caballos.\n");
                libera_recursos(shmid_apuestas, &shmid_posiciones, &semid, NULL, &msqid_caballos, pid_procesos, tuberias, n_caballos+3);
                exit(EXIT_FAILURE);
             }
-            printf("Despues de enviar señal a caballo %d\n", j-3);
          }
 
          for(j = 0; j < n_caballos; j++){
-            printf("Antes de recibir mensaje de caballo %d\n", j);
             if(recibir_m(msqid_caballos, (void *) &mensaje, 0, sizeof(caballo_principal) - sizeof(long)) == -1){
                printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
                libera_recursos(shmid_apuestas, &shmid_posiciones, &semid, NULL, &msqid_caballos, pid_procesos, tuberias, n_caballos+3);
                exit(EXIT_FAILURE);
             }
-            printf("Despues de recibir mensaje de caballo %d\n", j);
             posiciones[j] += mensaje.tirada;
-            printf("Posicion de %d es %d\n", j, posiciones[j]);
          }
-
-         printf("Antes de mandar señal a monitor.\n");
-         if(enviar_senal(pid_procesos[0], SIGUSR1) == -1){
-            printf("Fallo al enviar la señal desde el proceso principal al monitor.\n");
-            libera_recursos(shmid_apuestas, &shmid_posiciones, &semid, NULL, &msqid_caballos, pid_procesos, tuberias, n_caballos+3);
-            exit(EXIT_FAILURE);
-         }
-         printf("Despues de mandar señal a monitor.\n");
 
          /* Algun caballo ha llegado ya a la meta ? Este ejercicio no tiene sentido en eficiencia
          (o lo estoy haciendo tremendamente mal) */
          for(j = 0; j < n_caballos; j++){
             if(posiciones[j] >= longitud) {
             /* Pues terminamos */
-            break;
+            goto label;
             }
          }
 
@@ -409,6 +393,12 @@ int main(int argc, char *argv[]){
          if (signvalue) {
             break;
          }
+
+         if(enviar_senal(pid_procesos[0], SIGUSR1) == -1){
+            printf("Fallo al enviar la señal desde el proceso principal al monitor.\n");
+            libera_recursos(shmid_apuestas, &shmid_posiciones, &semid, NULL, &msqid_caballos, pid_procesos, tuberias, n_caballos+3);
+            exit(EXIT_FAILURE);
+         }
 /*
          if (enviar_senal(pid_procesos[0], SIGUSR1) == -1) {
             printf("Fallo al enviar la señal desde el proceso principal al monitor.\n");
@@ -417,11 +407,10 @@ int main(int argc, char *argv[]){
          }*/
       }
 
+      label:
       libera_recursos(shmid_apuestas, &shmid_posiciones, &semid, NULL, &msqid_caballos, pid_procesos, tuberias, n_caballos+3);
 
    } else {
-
-      printf("Crea caballo %d, con tubería %d y %d.\n", i-3, fd[0], fd[1]);
 
       if (caballo(i-3, fd[0], n_caballos, N_KEY_CABALLOS) == -1){
          printf("Fallo en caballos %d.\n", i);
@@ -446,8 +435,6 @@ void manejador_SIGALRM(int sig){
 void libera_recursos(int *shmid_apuestas, int *shmid_posiciones, int *semid,
    int *msqid_apuestas, int *msqid_caballos, int *pid_procesos, int *tuberias, int n) {
    int i;
-
-   printf("Entra aquí\n");
 
    for (i = 0; i < 4; i++) {
       if (shmid_apuestas[i] != -1) {
@@ -488,6 +475,13 @@ void libera_recursos(int *shmid_apuestas, int *shmid_posiciones, int *semid,
             if (enviar_senal(pid_procesos[i], SIGTERM) == -1) {
                printf("Error al terminar proceso %d.\n", i);
                exit(EXIT_FAILURE);
+            }
+
+            if (i == 0) {
+               if (enviar_senal(pid_procesos[i], SIGUSR1) == -1) {
+                  printf("Error al terminar proceso %d.\n", i);
+                  exit(EXIT_FAILURE);
+               }
             }
 
             if (i > 2) {
