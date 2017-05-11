@@ -92,8 +92,12 @@ int caballo(int i, int fd, int n_caballos, int key) {
       mensaje.tipo = 1;
       mensaje.tirada = tirada;
 
+<<<<<<< HEAD
       /* Envio del mensaje con la tirada */
       if(enviar_m(msqid, &mensaje, sizeof(caballo_principal) - sizeof(long)) == -1){
+=======
+      if(enviar_m(msqid, (void *) &mensaje, sizeof(caballo_principal) - sizeof(long)) == -1){
+>>>>>>> 3c22c24e7a182323954daf21ce3d87e8721d0217
          printf("Error al mandar el mensaje desde los caballos al proceso principal.\n");
          exit(ERROR);
       }
