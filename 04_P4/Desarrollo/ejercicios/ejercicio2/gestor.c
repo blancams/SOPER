@@ -178,12 +178,8 @@ void *ventanilla(void *arg) {
 
       printf("Checkerino 1\n");
 
-<<<<<<< HEAD
       /* Recepcion del mensaje de apuesta */
-      if(recibir_m(str->msqid, (void *) &apuesta, 2, sizeof(apostador_gestor) - sizeof(long)) == -1){
-=======
       if(recibir_m(str->msqid, (void *) &apuesta, 0, sizeof(apostador_gestor) - sizeof(long)) == -1){
->>>>>>> 3c22c24e7a182323954daf21ce3d87e8721d0217
          printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
          salir_hilo();
       }
