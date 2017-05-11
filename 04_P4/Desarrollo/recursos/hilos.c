@@ -68,8 +68,6 @@ int permitir_cancelar() {
    }
 }
 
-int salir_hilo() {
+void salir_hilo() {
    pthread_exit(NULL);
-
-   return OK;
 }

@@ -30,10 +30,9 @@ int crear_shm(int size, int *shmid, int key);
  * @brief Accede a una region de memoria compartida creada.
  *
  * @param int shmid: Identificador del area de memoria compartida a la que se quiere acceder.
- * @param char *addr: Puntero donde se guardara la direccion de acceso.
- * @return int: OK si todo fue correcto, ERROR en caso de error.
+ * @return int: Puntero al área de memoria si todo fue correcto, (void*) -1 en caso de error.
  */
-int acceder_shm(int shmid, char* addr);
+void* acceder_shm(int shmid);
 
 /**
  * @brief Desvincula las direcciones de memoria de un proceso de la region de memoria compartida.
@@ -41,7 +40,7 @@ int acceder_shm(int shmid, char* addr);
  * @param char *addr: Direccion de acceso a la memoria compartida.
  * @return int: OK si todo fue correcto, ERROR en caso de error.
  */
-int salir_shm(char* addr);
+int salir_shm(void* addr);
 
 /**
  * @brief Marca para su liberacion una region de memoria compartida.

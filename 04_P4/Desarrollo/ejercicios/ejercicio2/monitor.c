@@ -6,34 +6,53 @@
 
 #include "../../recursos/memcomp.h"
 #include "../../recursos/senales.h"
+#include "../../recursos/semaforos.h"
 #include "gestor.h"
 #include "monitor.h"
 
 #define MAX_CHAR 512             /*!< Numero maximo de caracteres */
 
-int monitor(int shmid_apuestas, int shmid_posiciones, int n_caballos) {
+int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int semid) {
    int j, signvalue;
    int *posiciones;
    char estado[MAX_CHAR];
-   char *ap, *pos;
    sigset_t sset;
    apuestas_total *apuestas;
 
-   ap = NULL;
-   if (acceder_shm(shmid_apuestas, ap) == -1) {
+   if ((apuestas = (apuestas_total *) acceder_shm(shmid_apuestas[0])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
+      salir_shm((void *) apuestas);
       libera_recursos_monitor(NULL, NULL);
       exit(ERROR);
    }
-   apuestas = (apuestas_total*) ap;
 
-   pos = NULL;
-   if (acceder_shm(shmid_posiciones, pos) == -1) {
+   if ((apuestas->apostado = (double *) acceder_shm(shmid_apuestas[1])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
+      salir_shm((void *) apuestas->apostado);
+      libera_recursos_monitor(NULL, NULL);
+      exit(ERROR);
+   }
+
+   if ((apuestas->ganancia = (double *) acceder_shm(shmid_apuestas[2])) == (void *) -1) {
+      printf("Error al acceder a memoria compartida en gestor.\n");
+      salir_shm((void *) apuestas->ganancia);
+      libera_recursos_monitor(NULL, NULL);
+      exit(ERROR);
+   }
+
+   if ((apuestas->cotizacion = (double *) acceder_shm(shmid_apuestas[3])) == (void *) -1) {
+      printf("Error al acceder a memoria compartida en gestor.\n");
+      salir_shm((void *) apuestas->cotizacion);
+      libera_recursos_monitor(NULL, NULL);
+      exit(ERROR);
+   }
+
+   if ((posiciones = (int *) acceder_shm(shmid_posiciones)) == (void *) -1) {
+      printf("Error al acceder a memoria compartida en gestor.\n");
+      salir_shm((void *) posiciones);
       libera_recursos_monitor(apuestas, NULL);
       exit(ERROR);
    }
-   posiciones = (int*) pos;
 
    if (crear_mascara(&sset, SIGTERM) == -1) {
       printf("Apostador: Error al crear la mascara de senales.\n");
@@ -41,29 +60,41 @@ int monitor(int shmid_apuestas, int shmid_posiciones, int n_caballos) {
       exit(ERROR);
    }
 
-   printf("Monitor llega aquí?\n");
-
    if(pause() != -1){
       printf("Fallo en pause de monitor 1.\n");
       libera_recursos_monitor(apuestas, posiciones);
       exit(ERROR);
    }
 
-   printf("Monitor llega aquí?\n");
+   for (j = 0; j < 5; j++) {
+      sprintf(estado, "Estado de la carrera: faltan %d segundos.", 5-j);
 
-   for (j = 0; j < 15; j++) {
-      sprintf(estado, "Estado de la carrera: faltan %d segundos.", 15-j);
+      if (Down_Semaforo(semid, 0, 0) == -1) {
+         printf("Error al ejecutar función Down_Semaforo.\n");
+         libera_recursos_monitor(apuestas, posiciones);
+         exit(ERROR);
+      }
+
       imprimir_carrera(estado, n_caballos, posiciones, apuestas->cotizacion);
-      usleep(1000);
+
+      if (Up_Semaforo(semid, 0, 0) == -1) {
+         printf("Error al ejecutar función Up_Semaforo.\n");
+         libera_recursos_monitor(apuestas, posiciones);
+         exit(ERROR);
+      }
+
+      usleep(1000000);
    }
 
    sprintf(estado, "Estado de la carrera: comenzada.");
 
    while(1) {
+      printf("Monitor llega aquí?\n");
       if(pause() != -1){
          printf("Fallo en pause de monitor 3.\n");
          libera_recursos_monitor(apuestas, posiciones);
          exit(ERROR);
+      printf("Monitor llega aquí?\n");
       }
 
       imprimir_carrera(estado, n_caballos, posiciones, apuestas->cotizacion);

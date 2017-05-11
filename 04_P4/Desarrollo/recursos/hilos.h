@@ -46,6 +46,6 @@ int impedir_cancelar();
 
 int permitir_cancelar();
 
-int salir_hilo();
+void salir_hilo();
 
 #endif

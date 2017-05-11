@@ -46,15 +46,15 @@ int crear_cm(int *cmid, int key) {
    }
 }
 
-int enviar_m(int msid, void *mensaje){
-   if(msgsnd(msid, mensaje, sizeof(mensaje) - sizeof(long), 0) == -1){
+int enviar_m(int msid, void *mensaje, int size){
+   if(msgsnd(msid, mensaje, size, 0) == -1){
       return ERROR;
    }
    return OK;
 }
 
-int recibir_m(int msid, void *mensaje, long tipo){
-   if(msgrcv(msid, mensaje, sizeof(mensaje) - sizeof(long), tipo, 0) == -1){
+int recibir_m(int msid, void *mensaje, long tipo, int size){
+   if(msgrcv(msid, mensaje, size, tipo, 0) == -1){
       return ERROR;
    }
    return OK;

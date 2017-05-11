@@ -24,7 +24,7 @@ typedef struct _Caballos_Principal{
  * @param int key: Parametro para acceso a cola de mensajes.
  * @return int: -1 si ha ocurrido algun error, 0 en caso de ejecucion normal.
  */
-int caballo(int i, int fd, int *posiciones, int n_caballos, int key);
+int caballo(int i, int fd, int n_caballos, int key);
 
 /**
  * @brief Generador de un numero aleatorio entre 1 y 6.
