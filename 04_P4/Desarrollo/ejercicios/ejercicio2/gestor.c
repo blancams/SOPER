@@ -1,3 +1,15 @@
+/**
+ * @brief Sistemas Operativos: Practica 4, ejercicio 2
+ *
+ * Grupo 2201, Pareja 10.
+ * Este modulo consiste en la creacion de una libreria que recoge el 
+ * comportamiento del gestor de apuestas.
+ *
+ * @file gestor.c
+ * @author Blanca Martín (blanca.martins@estudiante.uam.es)
+ * @author Fernando Villar (fernando.villarg@estudiante.uam.es)
+ * @date 12-05-2017
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -21,8 +33,10 @@ int gestor(int *shmid_apuestas, int semid, int n_apostadores, int n_caballos,
    str_ventanilla str;
    apuestas_total *apuestas;
 
+   /* Reserva de memoria */
    hilos = (pthread_t *) malloc(sizeof(pthread_t) * n_ventanillas);
 
+   /* Acceso a las regiones de memoria compartida */
    if ((apuestas = (apuestas_total *) acceder_shm(shmid_apuestas[0])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) apuestas);
@@ -51,12 +65,14 @@ int gestor(int *shmid_apuestas, int semid, int n_apostadores, int n_caballos,
       exit(ERROR);
    }
 
+   /* Acceso a la cola de mensajes */
    if(crear_cm(&msqid, key) == -1){
       printf("Fallo en el acceso a la cola de mensajes 2.\n");
       libera_recursos_gestor(hilos);
       exit(ERROR);
    }
 
+   /* Inicializacion de los datos */
    str.msqid = msqid;
    str.semid = semid;
    str.apuestas = apuestas;
@@ -72,12 +88,14 @@ int gestor(int *shmid_apuestas, int semid, int n_apostadores, int n_caballos,
       }
    }
 
+   /* Envio de la señal al proceso monitor, indicando la inicializacion de los datos */
    if (enviar_senal(monitor, SIGUSR1) == -1) {
       printf("Error al enviar senal de gestor a monitor.\n");
       libera_recursos_gestor(hilos);
       exit(ERROR);
    }
 
+   /* Creacion de los hilos ventanilla */
    for (j = 0; j < n_ventanillas; j++) {
       if (crear_hilo(&hilos[j], ventanilla, (void*) &str) == -1) {
          printf("Error al crear hilos.\n");
@@ -86,6 +104,7 @@ int gestor(int *shmid_apuestas, int semid, int n_apostadores, int n_caballos,
       }
    }
 
+   /* Envio de la señal al proceso apostador de que las ventanillas ya estan disponibles */
    if (enviar_senal(apostador, SIGUSR1) == -1) {
       printf("Error al enviar senal de gestor a monitor.\n");
       libera_recursos_gestor(hilos);
@@ -94,6 +113,7 @@ int gestor(int *shmid_apuestas, int semid, int n_apostadores, int n_caballos,
 
    printf("Gestor llega?\n");
 
+   /* Espera del gestor al inicio de la carrera */
    if(pause() != -1){
       printf("Fallo en pause de gestor.\n");
       libera_recursos_gestor(hilos);
@@ -102,6 +122,7 @@ int gestor(int *shmid_apuestas, int semid, int n_apostadores, int n_caballos,
 
    printf("Gestor llega?\n");
 
+   /* Cancelacion de las ventanillas antes de la carrera */
    for (j = 0; j < n_ventanillas; j++) {
       printf("Gestor cancela?\n");
       if (cancelar_hilo(hilos[j]) == -1) {
@@ -119,6 +140,7 @@ int gestor(int *shmid_apuestas, int semid, int n_apostadores, int n_caballos,
       printf("Gestor cancela?\n");
    }
 
+   /* Liberacion de recursos */
    libera_recursos_gestor(hilos);
 
    printf("Dime que llegas aqui hijo asdpaisbdgouisaebvdoubg\n");
@@ -148,6 +170,7 @@ void *ventanilla(void *arg) {
 
       printf("Checkerino 0\n");
 
+      /* Se impide cancelar una ventanilla en mitad de una gestion */
       if (impedir_cancelar() == -1) {
          printf("Error al deshabilitar cancelacion de hilo.\n");
          salir_hilo();
@@ -155,6 +178,7 @@ void *ventanilla(void *arg) {
 
       printf("Checkerino 1\n");
 
+      /* Recepcion del mensaje de apuesta */
       if(recibir_m(str->msqid, (void *) &apuesta, 2, sizeof(apostador_gestor) - sizeof(long)) == -1){
          printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
          salir_hilo();
@@ -164,6 +188,7 @@ void *ventanilla(void *arg) {
 
       printf("Info de apuesterina: %s %d %lf\n", apuesta.nombre, apuesta.caballo, apuesta.apuesta);
 
+      /* Asignacion de los datos */
       apostador = apuesta.nombre[10] - '1';
       if (apostador == 0) {
          if (apuesta.nombre[11] == '\0') {
@@ -175,6 +200,7 @@ void *ventanilla(void *arg) {
       caballo = apuesta.caballo;
       cantidad = apuesta.apuesta;
 
+      /* Modificacion de las apuestas controlado por semaforos */
       if (Down_Semaforo(str->semid, 0, 0) == -1) {
          printf("Error al ejecutar función Down_Semaforo.\n");
          salir_hilo();
@@ -194,6 +220,7 @@ void *ventanilla(void *arg) {
 
       printf("Hola?\n");
 
+      /* Permitimos de nuevo cancelar el hilo */
       if (permitir_cancelar() == -1) {
          printf("Error al habilitar cancelacion de hilo.\n");
          salir_hilo();

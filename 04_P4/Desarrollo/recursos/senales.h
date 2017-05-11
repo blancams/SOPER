@@ -25,8 +25,22 @@
  */
 int enviar_senal(pid_t proceso, int senal);
 
+/**
+ * @brief Crea la mascara de señales especificada para una señal.
+ *
+ * @param sigset_t *mascara: Puntero donde se guardara la mascara actual.
+ * @param int senal: Señal a añadir a la mascara.
+ * @return int: OK si todo fue correcto, ERROR en caso de error.
+ */
 int crear_mascara(sigset_t *mascara, int senal);
 
+/**
+ * @brief Indica si se ha recibido alguna señal bloqueada.
+ *
+ * @param int senal: Señal a comprobar su recepcion.
+ * @param int *value: Puntero donde se guardara un 0 si la señal no ha sido recibida, 1 del contrario.
+ * @return int: OK si todo fue correcto, ERROR en caso de error.
+ */
 int senal_bloqueada(int senal, int *value);
 
 /**

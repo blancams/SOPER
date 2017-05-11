@@ -38,6 +38,7 @@ int crear_cm(int *cmid, int key);
  *
  * @param int msid: Identificador de la cola a la que se quiere enviar el mensaje.
  * @param void *mensaje: Contenido del mensaje que se quiere enviar.
+ * @param int size: Tamaño del mensaje a enviar.
  * @return int: OK si todo fue correcto, ERROR en caso de error.
  */
 int enviar_m(int msid, void *mensaje, int size);
@@ -48,6 +49,7 @@ int enviar_m(int msid, void *mensaje, int size);
  * @param int msid: Identificador de la cola de la que se quiere recibir un mensaje.
  * @param void *mensaje: Puntero donde se guardara el contenido del mensaje recibido.
  * @param long tipo: Tipo de mensaje que se quiere recibir.
+ * @param int size: Tamaño del mensaje a recibir.
  * @return int: OK si todo fue correcto, ERROR en caso de error.
  */
 int recibir_m(int msid, void *mensaje, long tipo, int size);

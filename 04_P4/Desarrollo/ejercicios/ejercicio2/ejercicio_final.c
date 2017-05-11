@@ -53,6 +53,17 @@ void manejador_SIGUSR1(int sig);
  */
 void manejador_SIGALRM(int sig);
 
+/**
+ * @brief Liberacion de los recursos reservados.
+ *
+ * @param int *shmid_apuestas: Identificadores de las regiones de memoria compartida de apuestas.
+ * @param int *shmid_posiciones: Puntero con el identificador de la region de memoria compartida de posiciones de caballos.
+ * @param int *semid: Puntero con el identificador del semaforo.
+ * @param int *msqid: Puntero con el identificador de la cola de mensajes.
+ * @param int *pid_procesos: Array con los pids de los procesos.
+ * @param int *tuberias: Array con los descriptores de fichero.
+ * @param int n: Numero de procesos.
+ */
 void libera_recursos(int *shmid_apuestas, int *shmid_posiciones, int *semid,
    int *msqid, int *pid_procesos, int *tuberias, int n);
 
@@ -64,6 +75,11 @@ void libera_recursos(int *shmid_apuestas, int *shmid_posiciones, int *semid,
  * compartida, colas de mensajes, creacion de hilos, señales, etc) se simula una carrera
  * de caballos. El programa termina cuando el usuario pulza Ctrl+C o un caballo llega a la meta.
  *
+ * @param int argc: Numero de argumentos de entrada.
+ * @param char *argv: argv[1] - Numero de caballos (< 10).
+                      argv[2] - Longitud de la carrera.
+                      argv[3] - Numero de apostadores (< 10).
+                      argv[4] - Numero de ventanillas.
  * @return EXIT_SUCCESS si se han realizado correctamente todas las tareas, EXIT_FAILURE si
  * se ha producido algun error al reservar recursos o al liberarlos.
  */
