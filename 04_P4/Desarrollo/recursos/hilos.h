@@ -40,6 +40,12 @@ int unir_hilo(pthread_t hilo);
  * @param pthread_t hilo: Hilo cuya ejecucion quiere cancelarse.
  * @return int: OK si todo fue correcto, ERROR en caso de error.
  */
-int salir_hilo(pthread_t hilo);
+int cancelar_hilo(pthread_t hilo);
+
+int impedir_cancelar();
+
+int permitir_cancelar();
+
+int salir_hilo();
 
 #endif

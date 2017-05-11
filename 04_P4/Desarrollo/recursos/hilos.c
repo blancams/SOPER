@@ -40,7 +40,7 @@ int unir_hilo(pthread_t hilo) {
    }
 }
 
-int salir_hilo(pthread_t hilo) {
+int cancelar_hilo(pthread_t hilo) {
    int ret;
 
    ret = pthread_cancel(hilo);
@@ -50,4 +50,26 @@ int salir_hilo(pthread_t hilo) {
    } else {
       return ERROR;
    }
+}
+
+int impedir_cancelar() {
+   if (pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL)) {
+      return ERROR;
+   } else {
+      return OK;
+   }
+}
+
+int permitir_cancelar() {
+   if (pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL)) {
+      return ERROR;
+   } else {
+      return OK;
+   }
+}
+
+int salir_hilo() {
+   pthread_exit(NULL);
+
+   return OK;
 }

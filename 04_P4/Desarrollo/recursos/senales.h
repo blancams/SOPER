@@ -25,6 +25,10 @@
  */
 int enviar_senal(pid_t proceso, int senal);
 
+int crear_mascara(sigset_t *mascara, int senal);
+
+int senal_bloqueada(int senal, int *value);
+
 /**
  * @brief Asocia la recepcion de una señal a una rutina concreta.
  *

@@ -17,14 +17,38 @@
 #include "senales.h"
 
 int enviar_senal(pid_t proceso, int senal) {
-   int ret;
-
-   ret = kill(proceso, senal);
-
-   if (ret == 0) {
-      return OK;
-   } else {
+   if (kill(proceso, senal)) {
       return ERROR;
+   } else {
+      return OK;
+   }
+}
+
+int crear_mascara(sigset_t *mascara, int senal) {
+   if (sigemptyset(mascara)) {
+      return ERROR;
+   } else if (sigaddset(mascara, senal)) {
+      return ERROR;
+   } else if (sigprocmask(SIG_SETMASK, mascara, NULL)) {
+      return ERROR;
+   } else {
+      return OK;
+   }
+}
+
+int senal_bloqueada(int senal, int *value) {
+   int ret;
+   sigset_t bset;
+
+   if (sigpending(&bset)) {
+      return ERROR;
+   } else {
+      if ((ret = sigismember(&bset, senal)) == -1) {
+         return ERROR;
+      } else {
+         *value = ret;
+         return OK;
+      }
    }
 }
 
