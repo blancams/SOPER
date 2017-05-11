@@ -37,7 +37,7 @@ int apostador(int key, int n_apostadores, int n_caballos) {
    while(1) {
       usleep(100000);
 
-      ap_generada.tipo = 2;
+      ap_generada.tipo = 1;
       sprintf(nom_apostador, "Apostador-%d", rand() % n_apostadores + 1);
       strcpy(ap_generada.nombre, nom_apostador);
       ap_generada.caballo = rand() % n_caballos;
@@ -57,8 +57,6 @@ int apostador(int key, int n_apostadores, int n_caballos) {
          break;
       }
    }
-
-   printf("El fucking apostador va a salir.\n");
 
    exit(OK);
 }

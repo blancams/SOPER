@@ -66,6 +66,8 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int semid
       exit(ERROR);
    }
 
+   printf("Monitor llega aquí? 1\n");
+
    for (j = 0; j < 5; j++) {
       sprintf(estado, "Estado de la carrera: faltan %d segundos.", 5-j);
 
@@ -89,12 +91,12 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int semid
    sprintf(estado, "Estado de la carrera: comenzada.");
 
    while(1) {
-      printf("Monitor llega aquí?\n");
+      printf("Monitor llega aquí? 2\n");
       if(pause() != -1){
          printf("Fallo en pause de monitor 3.\n");
          libera_recursos_monitor(apuestas, posiciones);
          exit(ERROR);
-      printf("Monitor llega aquí?\n");
+      printf("Monitor llega aquí? 2\n");
       }
 
       imprimir_carrera(estado, n_caballos, posiciones, apuestas->cotizacion);

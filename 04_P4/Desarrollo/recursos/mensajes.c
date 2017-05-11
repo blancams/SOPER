@@ -16,6 +16,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <string.h>
+#include <errno.h>
 
 #include "mensajes.h"
 
@@ -55,7 +56,11 @@ int enviar_m(int msid, void *mensaje, int size){
 
 int recibir_m(int msid, void *mensaje, long tipo, int size){
    if(msgrcv(msid, mensaje, size, tipo, 0) == -1){
-      return ERROR;
+      //if (errno != EINTR {
+         return ERROR;
+      //} else {
+      //   return OK;
+      //}
    }
    return OK;
 }

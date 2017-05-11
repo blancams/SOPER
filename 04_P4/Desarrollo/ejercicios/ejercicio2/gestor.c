@@ -155,7 +155,7 @@ void *ventanilla(void *arg) {
 
       printf("Checkerino 1\n");
 
-      if(recibir_m(str->msqid, (void *) &apuesta, 2, sizeof(apostador_gestor) - sizeof(long)) == -1){
+      if(recibir_m(str->msqid, (void *) &apuesta, 0, sizeof(apostador_gestor) - sizeof(long)) == -1){
          printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
          salir_hilo();
       }
