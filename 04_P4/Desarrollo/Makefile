@@ -32,22 +32,22 @@ $(EXE1): $(DIR1)/%: $(DIR1)/%.o
 	@echo "## Generado ejecutable $@ a partir de $^"
 	@echo "## ------------------------------"
 
-$(EXE2): $(DIR2)/%: $(DIR2)/%.o $(MODS) $(EXE2AUX) $(EXE2GES)
+$(EXE2): %: %.o $(MODS) $(EXE2AUX) $(EXE2GES)
 	@echo "## ------------------------------"
 	@echo "## Generado $@.o a partir de $@.c"
 	@echo "## ------------------------------"
-	$(CC) $(CFLAGS) -o $@ $@.o -lpthread $(MODS) $(EXE2AUX) $(EXE2GES)
+	$(CC) $(CFLAGS) -o $@ $< -lpthread $(MODS) $(EXE2AUX) $(EXE2GES)
 	@echo "## ------------------------------"
 	@echo "## Generado ejecutable $@ a partir de $^"
 	@echo "## ------------------------------"
 
-$(EXE2AUX): %.o: %.c %.h
+$(EXE2AUX): %.o: %.c %.h $(MODS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 	@echo "## ------------------------------"
 	@echo "## Generado $@.o a partir de $^"
 	@echo "## ------------------------------"
 
-$(EXE2GES): %.o: %.c %.h ejercicios/ejercicio2/apostador.h
+$(EXE2GES): %.o: %.c %.h ejercicios/ejercicio2/apostador.h $(MODS)
 	$(CC) $(CFLAGS) -c -o $@ $< -lpthread
 	@echo "## ------------------------------"
 	@echo "## Generado $@.o a partir de $^"
