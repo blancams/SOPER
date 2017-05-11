@@ -31,7 +31,13 @@ int crear_shm(int size, int *shmid, int key) {
 
    id = shmget(k, size, IPC_CREAT | IPC_EXCL | SHM_R | SHM_W);
    if (id == -1) {
-      return ERROR;
+      id = shmget(k, size, SHM_R | SHM_W);
+      if (id == -1) {
+         return ERROR;
+      } else {
+         *shmid = id;
+         return OK;
+      }
    } else {
       *shmid = id;
       return OK;

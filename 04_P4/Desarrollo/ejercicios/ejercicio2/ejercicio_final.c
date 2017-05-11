@@ -41,8 +41,16 @@
  */
 void manejador_SIGUSR1(int sig);
 
+/**
+ * @brief Manejador de la señal SIGALRM.
+ *
+ * @param int sig: Señal
+ */
+void manejador_SIGALRM(int sig);
+
 void libera_recursos(int *shmid_apuestas, int *shmid_posiciones, int *semid,
-   int *msqid, int *pid_procesos, int *posiciones, int *tuberias);
+   int *msqid, int *pid_procesos, int *posiciones, int *tuberias, int n,
+      apuestas_total *apuestas);
 
 /**
  * @brief Funcion main del ejercicio final
@@ -60,46 +68,25 @@ int main(int argc, char *argv[]){
    int i, j;
    int n_caballos, longitud, n_apostadores, n_ventanillas;
    int pid, msqid, shmid_apuestas, shmid_posiciones, semid, signvalue;
-   int fd[2], *tuberias;
-   int *posiciones;
+   int fd[2], *tuberias, *posiciones;
    unsigned short semval;
    sigset_t sset;
    pid_t *pid_procesos;
    caballo_principal mensaje;
+   apuestas_total apuestas;
 
    /* Comprobación de los argumentos de entrada */
 	if(argc != 5){
       printf("Fallo en el número de argumentos de entrada.\n");
       exit(EXIT_FAILURE);
    } else {
-      i = 0;
-      while(argv[1][i] != '\0') {
-         if ((argv[1][i] < 48) || (argv[1][i] > 57)) {
-            printf("Fallo en los argumentos de entrada.\n");
-            exit(EXIT_FAILURE);
+      for (i = 1; i < argc; i++) {
+         for (j = 0; argv[i][j] != '\0'; j++) {
+            if ((argv[i][j] < 48) || (argv[i][j] > 57)) {
+               printf("Fallo en los argumentos de entrada.\n");
+               exit(EXIT_FAILURE);
+            }
          }
-         i++;
-      }
-      while(argv[2][i] != '\0') {
-         if ((argv[1][i] < 48) || (argv[1][i] > 57)) {
-            printf("Fallo en los argumentos de entrada.\n");
-            exit(EXIT_FAILURE);
-         }
-         i++;
-      }
-      while(argv[3][i] != '\0') {
-         if ((argv[1][i] < 48) || (argv[1][i] > 57)) {
-            printf("Fallo en los argumentos de entrada.\n");
-            exit(EXIT_FAILURE);
-         }
-         i++;
-      }
-      while(argv[4][i] != '\0') {
-         if ((argv[1][i] < 48) || (argv[1][i] > 57)) {
-            printf("Fallo en los argumentos de entrada.\n");
-            exit(EXIT_FAILURE);
-         }
-         i++;
       }
    }
 
@@ -136,6 +123,14 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
    }
 
+   /* Asignacion del manejador de alarma */
+   if (crear_manej(SIGALRM, &manejador_SIGALRM) == -1) {
+      printf("Error al crear el manejador.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   printf("Pasa de manejadores.\n");
+
    /* No tengo ni zorra de lo que estoy haciendo */
    /* (Fer) Pues bastante idea tenías. He añadido todas las cosas extra que requieren
    reserva de memoria: los hilos y los arrays con datos de apuestas. Faltan. */
@@ -143,43 +138,63 @@ int main(int argc, char *argv[]){
    posiciones = (int *) malloc(sizeof(int) * n_caballos);
    tuberias = (int *) malloc(sizeof(int) * n_caballos * 2);
 
+   apuestas.apostado = (double *) malloc(sizeof(double) * n_caballos);
+   apuestas.ganancia = (double *) malloc(sizeof(double) * n_apostadores);
+   apuestas.cotizacion = (double *) malloc(sizeof(double) * n_caballos);
+
+   printf("Pasa de reserva de memoria.\n");
+
    /* Creacion de la cola de mensajes para que los caballos le pasen
       el resultado de sus tiradas al proceso principal y para la comunicacion
       entre gestor de apuestas y apostador */
    if(crear_cm(&msqid, N_KEY_MENSAJES)== -1){
       printf("Fallo en la creacion de la cola de mensajes 1.\n");
-      libera_recursos(NULL, NULL, NULL, NULL, pid_procesos, posiciones, tuberias);
+      libera_recursos(NULL, NULL, NULL, NULL, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
       exit(EXIT_FAILURE);
    }
+
+   printf("Pasa de creación de cola de mensajes.\n");
 
    /* (Fer) Creacion de la memoria compartida para que gestor de apuestas y
       monitor tengan la informacion de las apuestas */
-   if(crear_shm(sizeof(apuestas_total), &shmid_apuestas, N_KEY_ACCGTAPU) == -1) {
+   if(crear_shm(sizeof(apuestas), &shmid_apuestas, N_KEY_ACCGTAPU) == -1) {
       printf("Fallo en la creacion de memoria compartida.\n");
-      libera_recursos(NULL, NULL, NULL, &msqid, pid_procesos, posiciones, tuberias);
+      libera_recursos(NULL, NULL, NULL, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
       exit(EXIT_FAILURE);
    }
 
+   printf("Pasa de primera memoria compartida.\n");
+
    if(crear_shm(sizeof(posiciones), &shmid_posiciones, N_KEY_POSICION) == -1) {
       printf("Fallo en la creacion de memoria compartida.\n");
-      libera_recursos(&shmid_apuestas, NULL, NULL, &msqid, pid_procesos, posiciones, tuberias);
+      libera_recursos(&shmid_apuestas, NULL, NULL, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
       exit(EXIT_FAILURE);
    }
+
+   printf("Pasa de segunda memoria compartida.\n");
 
    /* (Fer) Creacion del array de semaforos (de momento con uno solo, puede que
       acabe habiendo mas). */
    if (Crear_Semaforo(N_KEY_SEMAFORO, 1, &semid) == -1) {
       printf("Error al crear los semáforos.\n");
-      libera_recursos(&shmid_apuestas, &shmid_posiciones, NULL, &msqid, pid_procesos, posiciones, tuberias);
+      libera_recursos(&shmid_apuestas, &shmid_posiciones, NULL, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
       exit(EXIT_FAILURE);
    }
+
+   printf("Pasa de crear semaforo.\n");
 
    /* Inicializacion del semaforo */
    semval = 1;
    if (Inicializar_Semaforo(semid, &semval) == -1) {
       printf("Error al inicializar los semáforos.\n");
-      libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+      libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
       exit(EXIT_FAILURE);
+   }
+
+   printf("Pasa de inicializar semaforo.\n");
+
+   for (i = 0; i < n_caballos + 3; i++) {
+      pid_procesos[i] = getpid();
    }
 
    /* Creacion de los procesos */
@@ -193,7 +208,7 @@ int main(int argc, char *argv[]){
 
          if(pipe(fd)==-1){
             printf("Error creando la tubería.\n");
-            libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+            libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
             exit(EXIT_FAILURE);
          } else {
             printf("Lo hace.\n");
@@ -205,10 +220,12 @@ int main(int argc, char *argv[]){
       if((pid = fork()) == -1) {
 
          printf("Error al hacer el fork.\n");
-         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
          exit(EXIT_FAILURE);
 
       } else if(!pid){
+
+         printf("Creado proceso %d.\n", getpid());
 
          if (i > 2) {
             close(fd[1]);
@@ -231,25 +248,31 @@ int main(int argc, char *argv[]){
 
    if (i == 0) {
 
-      if (monitor(shmid_apuestas, shmid_posiciones, posiciones, n_caballos) == -1) {
+      printf("Crea monitor.\n");
+
+      if (monitor(shmid_apuestas, shmid_posiciones, n_caballos) == -1) {
          printf("Error en monitor.\n");
-         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
          exit(EXIT_FAILURE);
       }
 
    } else if (i == 1) {
 
+      printf("Crea apostador.\n");
+
       if (apostador(N_KEY_MENSAJES, n_apostadores, n_caballos) == -1) {
          printf("Error en apostador.\n");
-         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
          exit(EXIT_FAILURE);
       }
 
    } else if (i == 2) {
 
+      printf("Crea gestor.\n");
+
       if (gestor(shmid_apuestas, semid, n_apostadores, n_caballos, n_ventanillas, N_KEY_MENSAJES, pid_procesos[0], pid_procesos[1]) == -1) {
          printf("Error en gestor.\n");
-         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
          exit(EXIT_FAILURE);
       }
 
@@ -260,15 +283,17 @@ int main(int argc, char *argv[]){
          los cambios hechos en el resto del codigo. Hay que arreglar la parte de la
          liberacion de recursos pero meh, al final. */
 
+      printf("Hace algo en principal.\n");
+
       if (acceder_shm(shmid_posiciones, (char*) posiciones) == -1) {
          printf("Error al acceder a memoria compartida en gestor.\n");
-         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
          exit(EXIT_FAILURE);
       }
 
       if (crear_mascara(&sset, SIGINT) == -1) {
          printf("Error al crear la mascara de senales.\n");
-         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
          exit(EXIT_FAILURE);
       }
 
@@ -279,7 +304,7 @@ int main(int argc, char *argv[]){
 
       if (alarm(15) == -1) {
          printf("Fallo al crear alarma.\n");
-         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
          exit(EXIT_FAILURE);
       }
 
@@ -301,7 +326,7 @@ int main(int argc, char *argv[]){
          for(j = 3; j < n_caballos+3; j++){
             if(enviar_senal(pid_procesos[j], SIGUSR1) == -1){
                printf("Fallo al enviar la señal desde el proceso principal a los caballos.\n");
-               libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+               libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
                exit(EXIT_FAILURE);
             }
          }
@@ -309,7 +334,7 @@ int main(int argc, char *argv[]){
          for(j = 0; j < n_caballos; j++){
             if(recibir_m(msqid, &mensaje, 1) == -1){
                printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
-               libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+               libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
                exit(EXIT_FAILURE);
             }
             posiciones[j] += mensaje.tirada;
@@ -327,7 +352,7 @@ int main(int argc, char *argv[]){
          /* Aqui tiene que venir la captura de SIGINT */
          if (senal_bloqueada(SIGINT, &signvalue) == -1) {
             printf("Error al comprobar si se ha detectado la senal.\n");
-            libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+            libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
             exit(EXIT_FAILURE);
          }
 
@@ -337,18 +362,20 @@ int main(int argc, char *argv[]){
 
          if (enviar_senal(pid_procesos[0], SIGUSR1) == -1) {
             printf("Fallo al enviar la señal desde el proceso principal al monitor.\n");
-            libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+            libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
             exit(EXIT_FAILURE);
          }
       }
 
-      libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+      libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
 
    } else {
 
+      printf("Crea caballo %d.\n", i-3);
+
       if (caballo(i-3, fd[0], posiciones, n_caballos, N_KEY_MENSAJES) == -1){
          printf("Fallo en caballos %d.\n", i);
-         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias);
+         libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
          exit(EXIT_FAILURE);
       }
 
@@ -362,8 +389,16 @@ void manejador_SIGUSR1(int sig){
    return;
 }
 
+void manejador_SIGALRM(int sig){
+   return;
+}
+
 void libera_recursos(int *shmid_apuestas, int *shmid_posiciones, int *semid,
-   int *msqid, int *pid_procesos, int *posiciones, int *tuberias) {
+   int *msqid, int *pid_procesos, int *posiciones, int *tuberias, int n,
+      apuestas_total *apuestas) {
+   int i;
+
+   printf("Entra aquí\n");
 
    if (shmid_apuestas != NULL) {
       if(eliminar_shm(*shmid_apuestas) == -1){
@@ -390,7 +425,21 @@ void libera_recursos(int *shmid_apuestas, int *shmid_posiciones, int *semid,
       }
    }
 
+   if (apuestas != NULL) {
+      free(apuestas->apostado);
+      free(apuestas->ganancia);
+      free(apuestas->cotizacion);
+   }
+
    if (pid_procesos != NULL) {
+      for (i = 0; i < n; i++) {
+         if (pid_procesos[i] != getpid()) {
+            if (enviar_senal(pid_procesos[i], SIGTERM) == -1) {
+               printf("Error al terminar proceso %d.\n", i);
+               exit(EXIT_FAILURE);
+            }
+         }
+      }
       free(pid_procesos);
    }
    if (posiciones != NULL) {

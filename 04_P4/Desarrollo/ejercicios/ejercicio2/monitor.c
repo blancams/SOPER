@@ -11,39 +11,47 @@
 
 #define MAX_CHAR 512             /*!< Numero maximo de caracteres */
 
-int monitor(int shmid_apuestas, int shmid_posiciones, int *posiciones, int n_caballos) {
+int monitor(int shmid_apuestas, int shmid_posiciones, int n_caballos) {
    int j, signvalue;
+   int *posiciones;
    char estado[MAX_CHAR];
+   char *ap, *pos;
    sigset_t sset;
-   apuestas_total apuestas;
+   apuestas_total *apuestas;
 
-   if (acceder_shm(shmid_apuestas, (char*) &apuestas) == -1) {
+   ap = NULL;
+   if (acceder_shm(shmid_apuestas, ap) == -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       libera_recursos_monitor(NULL, NULL);
       exit(ERROR);
    }
+   apuestas = (apuestas_total*) ap;
 
-   if (acceder_shm(shmid_posiciones, (char*) posiciones) == -1) {
+   pos = NULL;
+   if (acceder_shm(shmid_posiciones, pos) == -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
-      libera_recursos_monitor(&apuestas, NULL);
+      libera_recursos_monitor(apuestas, NULL);
       exit(ERROR);
    }
+   posiciones = (int*) pos;
 
    if (crear_mascara(&sset, SIGTERM) == -1) {
       printf("Apostador: Error al crear la mascara de senales.\n");
-      libera_recursos_monitor(&apuestas, posiciones);
+      libera_recursos_monitor(apuestas, posiciones);
       exit(ERROR);
    }
 
    if(pause() != -1){
       printf("Fallo en pause de monitor 1.\n");
-      libera_recursos_monitor(&apuestas, posiciones);
+      libera_recursos_monitor(apuestas, posiciones);
       exit(ERROR);
    }
 
+   printf("Monitor llega aquí?\n");
+
    for (j = 0; j < 15; j++) {
       sprintf(estado, "Estado de la carrera: faltan %d segundos.", 15-j);
-      imprimir_carrera(estado, n_caballos, posiciones, apuestas.cotizacion);
+      imprimir_carrera(estado, n_caballos, posiciones, apuestas->cotizacion);
       usleep(1000);
    }
 
@@ -52,15 +60,15 @@ int monitor(int shmid_apuestas, int shmid_posiciones, int *posiciones, int n_cab
    while(1) {
       if(pause() != -1){
          printf("Fallo en pause de monitor 3.\n");
-         libera_recursos_monitor(&apuestas, posiciones);
+         libera_recursos_monitor(apuestas, posiciones);
          exit(ERROR);
       }
 
-      imprimir_carrera(estado, n_caballos, posiciones, apuestas.cotizacion);
+      imprimir_carrera(estado, n_caballos, posiciones, apuestas->cotizacion);
 
       if (senal_bloqueada(SIGTERM, &signvalue) == -1) {
          printf("Apostador: Error al comprobar si se ha detectado la senal.\n");
-         libera_recursos_monitor(&apuestas, posiciones);
+         libera_recursos_monitor(apuestas, posiciones);
          exit(ERROR);
       }
 
@@ -71,19 +79,19 @@ int monitor(int shmid_apuestas, int shmid_posiciones, int *posiciones, int n_cab
 
    if (alarm(15) == -1) {
       printf("Fallo al crear alarma.\n");
-      libera_recursos_monitor(&apuestas, posiciones);
+      libera_recursos_monitor(apuestas, posiciones);
       exit(ERROR);
    }
 
    if (pause() != -1) {
       printf("Fallo en pause de monitor.\n");
-      libera_recursos_monitor(&apuestas, posiciones);
+      libera_recursos_monitor(apuestas, posiciones);
       exit(ERROR);
    }
 
-   imprimir_finalizada(n_caballos, posiciones, apuestas.ganancia);
+   imprimir_finalizada(n_caballos, posiciones, apuestas->ganancia);
 
-   libera_recursos_monitor(&apuestas, posiciones);
+   libera_recursos_monitor(apuestas, posiciones);
 
    exit(OK);
 }

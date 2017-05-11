@@ -4,7 +4,7 @@
 #define OK 2
 #define ERROR -1
 
-int monitor(int shmid_apuestas, int shmid_posiciones, int *posiciones, int n_caballos);
+int monitor(int shmid_apuestas, int shmid_posiciones, int n_caballos);
 
 /**
  * @brief Funcion que imprime la informacion de la carrera.

@@ -46,49 +46,12 @@ int crear_cm(int *cmid, int key) {
    }
 }
 
-/*
-int enviar_m(int msid, char* mensaje, long tipo) {
-   int ret;
-   mensaje msg;
-
-   if (strlen(mensaje) >= MAX_CHAR) {
-      return ERROR;
-   }
-
-   msg.tipo = tipo;
-   msg.mensaje = mensaje;
-
-   ret = msgsnd(msid, &msg, sizeof(mensaje) - sizeof(long), 0);
-
-   if (ret == 0) {
-      return OK;
-   } else {
-      return ERROR;
-   }
-}
-*/
-
 int enviar_m(int msid, void *mensaje){
    if(msgsnd(msid, mensaje, sizeof(mensaje) - sizeof(long), 0) == -1){
       return ERROR;
    }
    return OK;
 }
-
-/*
-int recibir_m(int msid, long tipo) {
-   ssize_t ret;
-   mensaje msg;
-
-   ret = msgrcv(msid, &msg, sizeof(mensaje) - sizeof(long), tipo, 0);
-
-   if (ret == -1) {
-      return ERROR;
-   } else {
-      return OK;
-   }
-}
-*/
 
 int recibir_m(int msid, void *mensaje, long tipo){
    if(msgrcv(msid, mensaje, sizeof(mensaje) - sizeof(long), tipo, 0) == -1){

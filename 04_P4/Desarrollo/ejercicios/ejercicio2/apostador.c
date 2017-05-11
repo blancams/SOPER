@@ -24,6 +24,8 @@ int apostador(int key, int n_apostadores, int n_caballos) {
       exit(ERROR);
    }
 
+   printf("Apostador llega aquí?\n");
+
    if(crear_cm(&msqid, key) == -1) {
       printf("Apostador: Fallo en el acceso a la cola de mensajes.\n");
       exit(ERROR);

@@ -39,6 +39,6 @@ int gestor(int shmid_apuestas, int semid, int n_apostadores, int n_caballos,
  */
 void *ventanilla(void *arg);
 
-void libera_recursos_gestor(apuestas_total *apuestas, pthread_t *hilos);
+void libera_recursos_gestor(pthread_t *hilos);
 
 #endif

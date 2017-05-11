@@ -36,6 +36,8 @@ int caballo(int i, int fd, int *posiciones, int n_caballos, int key) {
       exit(ERROR);
    }
 
+   printf("Caballo llega aquí?\n");
+
    while(1) {
       if(pause() != -1){
          printf("No se en que momento da este error.\n");
@@ -85,7 +87,7 @@ int caballo(int i, int fd, int *posiciones, int n_caballos, int key) {
       }
    }
 
-   return 0;
+   exit(0);
 
 }
 
