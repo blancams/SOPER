@@ -25,16 +25,13 @@ int gestor(int shmid_apuestas, int semid, int n_apostadores, int n_caballos,
    printf("Gestor llega?");
 
    hilos = (pthread_t *) malloc(sizeof(pthread_t) * n_ventanillas);
-   printf("Gestor llega?");
 
    ap = NULL;
-   printf("Gestor llega?");
    if (acceder_shm(shmid_apuestas, ap) == -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       libera_recursos_gestor(hilos);
       exit(ERROR);
    }
-   printf("Gestor llega?");
    apuestas = (apuestas_total*) ap;
 
    printf("Gestor llega?");

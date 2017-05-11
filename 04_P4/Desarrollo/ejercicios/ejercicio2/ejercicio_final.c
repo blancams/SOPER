@@ -115,8 +115,6 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
    }
 
-   printf("Pasa de asignaciones.\n");
-
    /* Asignacion del manejador de alarma */
    if (crear_manej(SIGUSR1, &manejador_SIGUSR1) == -1) {
       printf("Error al crear el manejador.\n");
@@ -129,8 +127,6 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
    }
 
-   printf("Pasa de manejadores.\n");
-
    /* No tengo ni zorra de lo que estoy haciendo */
    /* (Fer) Pues bastante idea tenías. He añadido todas las cosas extra que requieren
    reserva de memoria: los hilos y los arrays con datos de apuestas. Faltan. */
@@ -142,8 +138,6 @@ int main(int argc, char *argv[]){
    apuestas.ganancia = (double *) malloc(sizeof(double) * n_apostadores);
    apuestas.cotizacion = (double *) malloc(sizeof(double) * n_caballos);
 
-   printf("Pasa de reserva de memoria.\n");
-
    /* Creacion de la cola de mensajes para que los caballos le pasen
       el resultado de sus tiradas al proceso principal y para la comunicacion
       entre gestor de apuestas y apostador */
@@ -153,8 +147,6 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
    }
 
-   printf("Pasa de creación de cola de mensajes.\n");
-
    /* (Fer) Creacion de la memoria compartida para que gestor de apuestas y
       monitor tengan la informacion de las apuestas */
    if(crear_shm(sizeof(apuestas), &shmid_apuestas, N_KEY_ACCGTAPU) == -1) {
@@ -163,15 +155,11 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
    }
 
-   printf("Pasa de primera memoria compartida.\n");
-
    if(crear_shm(sizeof(posiciones), &shmid_posiciones, N_KEY_POSICION) == -1) {
       printf("Fallo en la creacion de memoria compartida.\n");
       libera_recursos(&shmid_apuestas, NULL, NULL, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
       exit(EXIT_FAILURE);
    }
-
-   printf("Pasa de segunda memoria compartida.\n");
 
    /* (Fer) Creacion del array de semaforos (de momento con uno solo, puede que
       acabe habiendo mas). */
@@ -181,8 +169,6 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
    }
 
-   printf("Pasa de crear semaforo.\n");
-
    /* Inicializacion del semaforo */
    semval = 1;
    if (Inicializar_Semaforo(semid, &semval) == -1) {
@@ -191,11 +177,11 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
    }
 
-   printf("Pasa de inicializar semaforo.\n");
-
    for (i = 0; i < n_caballos + 3; i++) {
       pid_procesos[i] = getpid();
    }
+
+   printf("Llega al bucle forks.\n");
 
    /* Creacion de los procesos */
    /* (Fer) He sacado del bucle casi todo. He dejado la creacion de las tuberias (no hacia
@@ -210,9 +196,6 @@ int main(int argc, char *argv[]){
             printf("Error creando la tubería.\n");
             libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
             exit(EXIT_FAILURE);
-         } else {
-            printf("Lo hace.\n");
-            printf("%d %d\n", fd[0], fd[1]);
          }
 
       }
@@ -224,8 +207,6 @@ int main(int argc, char *argv[]){
          exit(EXIT_FAILURE);
 
       } else if(!pid){
-
-         printf("Creado proceso %d.\n", getpid());
 
          if (i > 2) {
             close(fd[1]);
@@ -240,7 +221,6 @@ int main(int argc, char *argv[]){
             tuberias[i-3] = fd[0];
             tuberias[i-2] = fd[1];
          }
-         close(fd[0]);
 
       }
 
@@ -283,8 +263,6 @@ int main(int argc, char *argv[]){
          los cambios hechos en el resto del codigo. Hay que arreglar la parte de la
          liberacion de recursos pero meh, al final. */
 
-      printf("Hace algo en principal.\n");
-
       if (acceder_shm(shmid_posiciones, (char*) posiciones) == -1) {
          printf("Error al acceder a memoria compartida en gestor.\n");
          libera_recursos(&shmid_apuestas, &shmid_posiciones, &semid, &msqid, pid_procesos, posiciones, tuberias, n_caballos+3, &apuestas);
@@ -301,6 +279,12 @@ int main(int argc, char *argv[]){
       for(j = 0; j < n_caballos; j++){
          posiciones[j] = 0;
       }
+
+      for (j = 0; j < n_caballos*2; j++) {
+         close(tuberias[j-1]);
+      }
+
+      printf("Hace algo en principal.\n");
 
       if (alarm(15) == -1) {
          printf("Fallo al crear alarma.\n");
@@ -319,7 +303,7 @@ int main(int argc, char *argv[]){
       while(1) {
          /* Escribimos para cada caballo? No tiene sentido esto no ?  No me acuerdo de tuberias sorry */
          for (j = 1; j < n_caballos*2; j = j + 2) {
-            write(fd[j], posiciones, sizeof(posiciones));
+            write(tuberias[j], posiciones, sizeof(posiciones));
          }
 
          /* Le mandamos una señal a cada caballo ?  Como ?  Array de pids guarro ? */
@@ -447,5 +431,9 @@ void libera_recursos(int *shmid_apuestas, int *shmid_posiciones, int *semid,
    }
    if (tuberias != NULL) {
       free(tuberias);
+   }
+
+   for (i = 0; i < n; i++) {
+      waitpid(pid_procesos[i], NULL, 0);
    }
 }

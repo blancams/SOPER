@@ -19,6 +19,8 @@ int apostador(int key, int n_apostadores, int n_caballos) {
 
    srand(time(NULL));
 
+   printf("Apostador llega aquí?\n");
+
    if(pause() != -1){
       printf("Apostador: Fallo en pause de monitor.\n");
       exit(ERROR);

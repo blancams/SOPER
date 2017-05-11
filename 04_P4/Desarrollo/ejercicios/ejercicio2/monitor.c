@@ -41,6 +41,8 @@ int monitor(int shmid_apuestas, int shmid_posiciones, int n_caballos) {
       exit(ERROR);
    }
 
+   printf("Monitor llega aquí?\n");
+
    if(pause() != -1){
       printf("Fallo en pause de monitor 1.\n");
       libera_recursos_monitor(apuestas, posiciones);

@@ -49,20 +49,20 @@ $(EXE2): %: %.o $(MODS) $(EXE2AUX) $(EXE2GES)
 $(EXE2AUX): %.o: %.c %.h $(MODS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 	@echo "## ------------------------------"
-	@echo "## Generado $@.o a partir de $^"
+	@echo "## Generado $@ a partir de $^"
 	@echo "## ------------------------------"
 	@echo ""
 
 $(EXE2GES): %.o: %.c %.h ejercicios/ejercicio2/apostador.h $(MODS)
 	$(CC) $(CFLAGS) -c -o $@ $< -lpthread
 	@echo "## ------------------------------"
-	@echo "## Generado $@.o a partir de $^"
+	@echo "## Generado $@ a partir de $^"
 	@echo "## ------------------------------"
 	@echo ""
 
 $(MODS): %.o: %.c %.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 	@echo "## ------------------------------"
-	@echo "## Generado $@.o a partir de $^"
+	@echo "## Generado $@ a partir de $^"
 	@echo "## ------------------------------"
 	@echo ""
