@@ -42,10 +42,23 @@ int unir_hilo(pthread_t hilo);
  */
 int cancelar_hilo(pthread_t hilo);
 
+/**
+ * @brief Impide la cancelacion de la ejecucion de los hilos
+ *
+ * @return int: OK si todo fue correcto, ERROR en caso de error.
+ */
 int impedir_cancelar();
 
+/**
+ * @brief Permite la cancelacion de la ejecucion de los hilos
+ *
+ * @return int: OK si todo fue correcto, ERROR en caso de error.
+ */
 int permitir_cancelar();
 
+/**
+ * @brief Finaliza la ejecucion de un hilo.
+ */
 void salir_hilo();
 
 #endif

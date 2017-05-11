@@ -37,7 +37,7 @@ void* acceder_shm(int shmid);
 /**
  * @brief Desvincula las direcciones de memoria de un proceso de la region de memoria compartida.
  *
- * @param char *addr: Direccion de acceso a la memoria compartida.
+ * @param void *addr: Direccion de acceso a la memoria compartida.
  * @return int: OK si todo fue correcto, ERROR en caso de error.
  */
 int salir_shm(void* addr);

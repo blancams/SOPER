@@ -1,3 +1,15 @@
+/**
+ * @brief Sistemas Operativos: Practica 4, ejercicio 2
+ *
+ * Grupo 2201, Pareja 10.
+ * Este modulo consiste en la creacion de una libreria que recoge el
+ * comportamiento del monitor de la carrera.
+ *
+ * @file monitor.c
+ * @author Blanca Martín (blanca.martins@estudiante.uam.es)
+ * @author Fernando Villar (fernando.villarg@estudiante.uam.es)
+ * @date 12-05-2017
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -19,6 +31,7 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int semid
    sigset_t sset;
    apuestas_total *apuestas;
 
+   /* Acceso a las regiones de memoria compartida */
    if ((apuestas = (apuestas_total *) acceder_shm(shmid_apuestas[0])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) apuestas);
@@ -54,12 +67,14 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int semid
       exit(ERROR);
    }
 
+   /* Creacion de la mascara de señales */
    if (crear_mascara(&sset, SIGTERM) == -1) {
       printf("Apostador: Error al crear la mascara de senales.\n");
       libera_recursos_monitor(apuestas, posiciones);
       exit(ERROR);
    }
 
+   /* Espera a la señalizacion del proceso gestor */
    if(pause() != -1){
       printf("Fallo en pause de monitor 1.\n");
       libera_recursos_monitor(apuestas, posiciones);
@@ -86,6 +101,7 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int semid
       usleep(1000000);
    }
 
+   /* Impresion de los datos de la carrera comenzada */
    sprintf(estado, "Estado de la carrera: comenzada.");
 
    while(1) {
@@ -94,7 +110,7 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int semid
          libera_recursos_monitor(apuestas, posiciones);
          exit(ERROR);
       }
-
+      
       if (senal_bloqueada(SIGTERM, &signvalue) == -1) {
          printf("Apostador: Error al comprobar si se ha detectado la senal.\n");
          libera_recursos_monitor(apuestas, posiciones);
@@ -108,6 +124,7 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int semid
       imprimir_carrera(estado, n_caballos, posiciones, apuestas->cotizacion);
    }
 
+   /* Espera de 15 segundos */
    if (alarm(15) == -1) {
       printf("Fallo al crear alarma.\n");
       libera_recursos_monitor(apuestas, posiciones);
