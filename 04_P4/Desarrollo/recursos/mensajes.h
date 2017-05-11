@@ -40,7 +40,7 @@ int crear_cm(int *cmid, int key);
  * @param void *mensaje: Contenido del mensaje que se quiere enviar.
  * @return int: OK si todo fue correcto, ERROR en caso de error.
  */
-int enviar_m(int msid, void *mensaje);
+int enviar_m(int msid, void *mensaje, int size);
 
 /**
  * @brief Recibe un mensaje de la cola especificada.
@@ -50,7 +50,7 @@ int enviar_m(int msid, void *mensaje);
  * @param long tipo: Tipo de mensaje que se quiere recibir.
  * @return int: OK si todo fue correcto, ERROR en caso de error.
  */
-int recibir_m(int msid, void *mensaje, long tipo);
+int recibir_m(int msid, void *mensaje, long tipo, int size);
 
 /**
  * @brief Elimina una cola de mensajes.

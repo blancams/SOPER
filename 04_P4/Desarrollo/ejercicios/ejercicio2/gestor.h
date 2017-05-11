@@ -29,7 +29,7 @@ typedef struct _Gestor_Ventanilla{
    apuestas_total *apuestas;
 } str_ventanilla;
 
-int gestor(int shmid_apuestas, int semid, int n_apostadores, int n_caballos,
+int gestor(int *shmid_apuestas, int semid, int n_apostadores, int n_caballos,
    int n_ventanillas, int key, pid_t monitor, pid_t apostador);
 
 /**

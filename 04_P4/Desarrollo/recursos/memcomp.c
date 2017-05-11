@@ -44,20 +44,11 @@ int crear_shm(int size, int *shmid, int key) {
    }
 }
 
-int acceder_shm(int shmid, char* addr) {
-   char *shmaddr;
-
-   shmaddr = shmat(shmid, NULL, 0);
-
-   if (shmaddr == NULL) {
-      return ERROR;
-   } else {
-      addr = shmaddr;
-      return OK;
-   }
+void* acceder_shm(int shmid) {
+   return shmat(shmid, NULL, 0);
 }
 
-int salir_shm(char* addr) {
+int salir_shm(void* addr) {
    int ret;
 
    ret = shmdt(addr);

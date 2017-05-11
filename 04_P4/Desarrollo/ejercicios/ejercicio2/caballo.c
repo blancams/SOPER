@@ -15,12 +15,12 @@
  *
  * @param int i: Identificador del caballo.
  * @param int *fd: Descriptores de fichero para la comunicacion del proceso principal y los caballos.
- * @param int *posiciones: Array de las posiciones de todos los caballos.
  * @param int n_caballos: Numero de caballos.
  * @return int: -1 si ha ocurrido algun error, 0 en caso de ejecucion normal.
  */
-int caballo(int i, int fd, int *posiciones, int n_caballos, int key) {
+int caballo(int i, int fd, int n_caballos, int key) {
    int max, min, j, tirada, msqid, signvalue;
+   int *posiciones = NULL;
    sigset_t sset;
    caballo_principal mensaje;
 
@@ -53,7 +53,7 @@ int caballo(int i, int fd, int *posiciones, int n_caballos, int key) {
          break;
       }
 
-      read(fd, posiciones, sizeof(posiciones));
+      read(fd, posiciones, sizeof(int) * n_caballos);
       max = 0;
       min = INT_MAX;
 
@@ -81,7 +81,7 @@ int caballo(int i, int fd, int *posiciones, int n_caballos, int key) {
       mensaje.tipo = 1;
       mensaje.tirada = tirada;
 
-      if(enviar_m(msqid, &mensaje) == -1){
+      if(enviar_m(msqid, &mensaje, sizeof(caballo_principal) - sizeof(long)) == -1){
          printf("Error al mandar el mensaje desde los caballos al proceso principal.\n");
          exit(ERROR);
       }

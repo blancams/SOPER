@@ -19,14 +19,10 @@ int apostador(int key, int n_apostadores, int n_caballos) {
 
    srand(time(NULL));
 
-   printf("Apostador llega aquí?\n");
-
    if(pause() != -1){
       printf("Apostador: Fallo en pause de monitor.\n");
       exit(ERROR);
    }
-
-   printf("Apostador llega aquí?\n");
 
    if(crear_cm(&msqid, key) == -1) {
       printf("Apostador: Fallo en el acceso a la cola de mensajes.\n");
@@ -39,7 +35,7 @@ int apostador(int key, int n_apostadores, int n_caballos) {
    }
 
    while(1) {
-      usleep(100);
+      usleep(100000);
 
       ap_generada.tipo = 2;
       sprintf(nom_apostador, "Apostador-%d", rand() % n_apostadores + 1);
@@ -47,7 +43,7 @@ int apostador(int key, int n_apostadores, int n_caballos) {
       ap_generada.caballo = rand() % n_caballos;
       ap_generada.apuesta = ((double)rand() / (double)RAND_MAX) * MAX_APUESTA;
 
-      if (enviar_m(msqid, &ap_generada) == -1) {
+      if (enviar_m(msqid, (void *) &ap_generada, sizeof(apostador_gestor) - sizeof(long)) == -1) {
          printf("Apostador: Error al enviar mensaje desde generador.\n");
          exit(ERROR);
       }
@@ -61,6 +57,8 @@ int apostador(int key, int n_apostadores, int n_caballos) {
          break;
       }
    }
+
+   printf("El fucking apostador va a salir.\n");
 
    exit(OK);
 }
