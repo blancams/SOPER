@@ -26,7 +26,7 @@ typedef struct _Apuestas_Total{
    double *apostado;
    double *cotizacion;
    double total;
-   double *ganancia;
+   double **ganancia;
 } apuestas_total;
 
 /**
@@ -68,7 +68,7 @@ void *ventanilla(void *arg);
  * @brief Funcion que libera los recursos del proceso gestor.
  *
  * @param pthread_t *hilos: Array de hilos a liberar.
- */ 
+ */
 void libera_recursos_gestor(pthread_t *hilos);
 
 #endif

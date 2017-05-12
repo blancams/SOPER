@@ -25,7 +25,7 @@
  * @param int semid: Identificador del semaforo para acceso a regiones compartidas.
  * @return int: OK si todo fue correcto, ERROR en caso de error.
  */
-int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int semid);
+int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int n_apostadores, int semid);
 
 /**
  * @brief Funcion que imprime la informacion de la carrera.
@@ -44,7 +44,7 @@ void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cot
  * @param int *posiciones: Posiciones de los caballos.
  * @param double *ganancia: Ganancia de cada uno de los apostadores.
  */
- void imprimir_finalizada(int n_caballos, int *posiciones, double *ganancia);
+ void imprimir_finalizada(int n_caballos, int n_apostadores, int *posiciones, double **ganancia);
 
 /**
  * @brief Libera los recursos reservados por el proceso monitor.
@@ -52,6 +52,6 @@ void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cot
  * @param apuestas_total *apuestas: Argumento para la desvinculacion de la memoria compartida de las apuestas.
  * @param int *posiciones: Argumento para la desvinculacion de la memoria compartida de las posiciones de los caballos.
  */
- void libera_recursos_monitor(apuestas_total *apuestas, int *posiciones);
+ void libera_recursos_monitor(apuestas_total *apuestas, int *posiciones, int n_apostadores);
 
 #endif

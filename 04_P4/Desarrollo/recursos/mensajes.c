@@ -56,11 +56,8 @@ int enviar_m(int msid, void *mensaje, int size){
 
 int recibir_m(int msid, void *mensaje, long tipo, int size){
    if(msgrcv(msid, mensaje, size, tipo, 0) == -1){
-      //if (errno != EINTR {
-         return ERROR;
-      //} else {
-      //   return OK;
-      //}
+      printf("Error: %d - %s\n", errno, strerror(errno));
+      return ERROR;
    }
    return OK;
 }
