@@ -15,8 +15,14 @@
 
 #define OK 2						/*!< Valor para correcto retorno de funciones */
 #define ERROR -1					/*!< Valor para incorrecto retorno de funciones */
-#define NOM_CHAR 20
+#define NOM_CHAR 20					/*!< Maximo numero de caracteres */
 
+/**
+ * @brief Estructura que recoge los datos de una apuesta.
+ *
+ * Estructura que contiene el nombre del apostador,
+ * el identificador del caballo y la apuesta realizada.
+ */
 typedef struct _Info_AG{
    char nombre[NOM_CHAR];
    int caballo;
@@ -26,8 +32,8 @@ typedef struct _Info_AG{
 /**
  * @brief Estructura para la comunicacion del generador de apuestas al gestor.
  *
- * Estructura que contiene el tipo de mensaje, junto con el nombre del apostador,
- * el identificador del caballo y la apuesta realizada.
+ * Estructura que contiene el tipo de mensaje, junto con una estructura que 
+ * hace referencia a la apuesta.
  */
 typedef struct _Apostador_Gestor{
    long tipo;

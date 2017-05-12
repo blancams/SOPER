@@ -41,8 +41,9 @@ void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cot
  * @brief Funcion que imprime la informacion de la carrera una vez finalizada.
  *
  * @param int n_caballos: Numero de caballos.
+ * @param int n_apostadores: Numero de apostadores.
  * @param int *posiciones: Posiciones de los caballos.
- * @param double *ganancia: Ganancia de cada uno de los apostadores.
+ * @param double **ganancia: Ganancia de cada uno de los apostadores.
  */
  void imprimir_finalizada(int n_caballos, int n_apostadores, int *posiciones, double **ganancia);
 
@@ -51,6 +52,7 @@ void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cot
  *
  * @param apuestas_total *apuestas: Argumento para la desvinculacion de la memoria compartida de las apuestas.
  * @param int *posiciones: Argumento para la desvinculacion de la memoria compartida de las posiciones de los caballos.
+ * @param int n_apostadores: Numero de apostadores.
  */
  void libera_recursos_monitor(apuestas_total *apuestas, int *posiciones, int n_apostadores);
 

@@ -61,18 +61,9 @@ int caballo(int i, int fd, int n_caballos, int key) {
          break;
       }
 
-<<<<<<< HEAD
-      /* Lectura de las posiciones */
       posiciones = (int *) malloc(sizeof(int) * n_caballos);
-      if(read(fd, posiciones, sizeof(int) * n_caballos) == -1){
-         printf("%s\n", strerror(errno));
-      }
-=======
-      posiciones = (int *) malloc(sizeof(int) * n_caballos);
-
       read(fd, posiciones, sizeof(int) * n_caballos);
 
->>>>>>> cb78ea920dd7c8fae5ffaaff49c431a2d9b6803b
       max = 0;
       min = INT_MAX;
 

@@ -32,13 +32,13 @@
 #include "apostador.h"
 #include "monitor.h"
 
-#define N_KEY_MENSAJES 300       /*!< Numero para la generacion de la clave de la cola de mensajes */
-#define N_KEY_CABALLOS 1726
+#define N_KEY_MENSAJES 300       /*!< Numero para la generacion de la clave de la cola de mensajes entre gestor y apostador */
+#define N_KEY_CABALLOS 1726      /*!< Numero para la generacion de la clave de la cola de mensajes entre caballos y principall */
 #define N_KEY_ACCGTAP1 275       /*!< Numero para la generacion de la memoria compartida ente gestor y apostador */
-#define N_KEY_ACCGTAP2 476
-#define N_KEY_ACCGTAP3 674
-#define N_KEY_ACCGTAP4 936
-#define N_KEY_ACCGTAP5 1265
+#define N_KEY_ACCGTAP2 476       /*!< Numero para la generacion de la memoria compartida ente gestor y apostador */
+#define N_KEY_ACCGTAP3 674       /*!< Numero para la generacion de la memoria compartida ente gestor y apostador */
+#define N_KEY_ACCGTAP4 936       /*!< Numero para la generacion de la memoria compartida ente gestor y apostador */
+#define N_KEY_ACCGTAP5 1265      /*!< Numero para la generacion de la memoria compartida ente gestor y apostador */
 #define N_KEY_POSICION 334       /*!< Numero para la generacion de la memoria compartida ente monitor y principal */
 #define N_KEY_SEMAFORO 72345     /*!< Numero para la generacion del semaforo */
 
@@ -56,8 +56,25 @@ void manejador_SIGUSR1(int sig);
  */
 void manejador_SIGALRM(int sig);
 
+/**
+ * @brief Libera recursos refereidos a colas de mensajes, memoria compartida, semaforos, etc.
+ *
+ * @param int *shmid_apuestas: Identificadores de las regiones de memoria compartida entre gestor y apostador.
+ * @param int *shmid_posiciones: Referencia al identificador de la memoria compartida entre monitor y principal.
+ * @param int *semid: Referencia al identificador del semaforo.
+ * @param int *msqid_apuestas: Referencia al identificador de la cola de mensajes entre gestor y apostador.
+ * @param int *msqid_caballos: Referencia al identficador de la cola de mensajes entre caballos y principal.
+ * @param int m: Numero de apostadores.
+ */
 void libera_recursos_main(int *shmid_apuestas, int *shmid_posiciones, int *semid, int *msqid_apuestas, int *msqid_caballos, int m);
 
+/**
+ * @brief Libera recursos refereidos a la memoria reservada.
+ *
+ * @param int *shmid_apuestas: Array de los identificadores a liberar.
+ * @param int *pid_procesos: Arrays de pids a liberar.
+ * @param int *tuberias: Array de descriptores de fichero a liberar.
+ */
 void libera_recursos_malloc(int *shmid_apuestas, int *pid_procesos, int *tuberias);
 
 /**
@@ -391,15 +408,7 @@ int main(int argc, char *argv[]){
       while(1) {
          /* Escribimos para cada caballo? No tiene sentido esto no ?  No me acuerdo de tuberias sorry */
          for (j = 1; j < n_caballos*2; j = j + 2) {
-<<<<<<< HEAD
-            printf("Antes de escribir en tuberia fd[%d] = %d\n", j, tuberias[j]);
-            if(write(tuberias[j], posiciones, sizeof(int) * n_caballos) == -1){
-               printf("%s\n", strerror(errno));
-            }
-            printf("Despues de escribir en tuberia fd[%d] = %d\n", j, tuberias[j]);
-=======
             write(tuberias[j], (void *) posiciones, sizeof(int) * n_caballos);
->>>>>>> cb78ea920dd7c8fae5ffaaff49c431a2d9b6803b
          }
 
          /* Le mandamos una señal a cada caballo ?  Como ?  Array de pids guarro ? */
@@ -477,10 +486,6 @@ int main(int argc, char *argv[]){
          }
       }
 
-<<<<<<< HEAD
-      printf("Crea caballo %d, con tubería %d y %d.\n", i-3, fd[0], fd[1]);
-      close(fd[1]);
-=======
       for (j = 0; j < n_caballos+3; j++) {
          waitpid(pid_procesos[j], NULL, 0);
       }
@@ -488,15 +493,12 @@ int main(int argc, char *argv[]){
       libera_recursos_main(shmid_apuestas, &shmid_posiciones, &semid, NULL, &msqid_caballos, n_apostadores);
 
    } else {
-
->>>>>>> cb78ea920dd7c8fae5ffaaff49c431a2d9b6803b
       if (caballo(i-3, fd[0], n_caballos, N_KEY_CABALLOS) == -1){
          printf("Fallo en caballos %d.\n", i);
          libera_recursos_main(shmid_apuestas, &shmid_posiciones, &semid, &msqid_apuestas, &msqid_caballos, n_apostadores);
          libera_recursos_malloc(shmid_apuestas, pid_procesos, tuberias);
          exit(EXIT_FAILURE);
       }
-
    }
 
    libera_recursos_malloc(shmid_apuestas, pid_procesos, tuberias);

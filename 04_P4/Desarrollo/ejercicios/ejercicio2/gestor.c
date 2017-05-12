@@ -148,11 +148,6 @@ int gestor(int *shmid_apuestas, int semid, int n_apostadores, int n_caballos,
    return OK;
 }
 
-/**
- * @brief Funcion que recoge el comportamiento de cada uno de los hilos ventanilla.
- *
- * @param void *args: Argumentos que contienen una estructura de tipo str_ventanilla.
- */
 void *ventanilla(void *arg) {
    int apostador, caballo;
    double cantidad;

@@ -34,8 +34,20 @@ int enviar_senal(pid_t proceso, int senal);
  */
 int crear_mascara(sigset_t *mascara, int senal);
 
+/**
+ * @brief Añade la señal a la mascara.
+ *
+ * @param int senal: Señal a añadir a la mascara.
+ * @return int: OK si todo fue correcto, ERROR en caso de error.
+ */
 int anadir_mascara(int senal);
 
+/**
+ * @brief Elimina la señal de la mascara.
+ *
+ * @param int senal: Señal a eliminar de la mascara.
+ * @return int: OK si todo fue correcto, ERROR en caso de error.
+ */
 int quitar_mascara(int senal);
 
 /**
