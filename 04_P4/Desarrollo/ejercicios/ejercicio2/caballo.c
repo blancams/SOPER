@@ -29,7 +29,7 @@ int caballo(int i, int fd, int n_caballos, int key) {
    int *posiciones;
    sigset_t sset;
    caballo_principal *mensaje;
-
+   /* Semilla */
    srand((unsigned) time(NULL)*getpid());
 
    /* Acceso a la cola de mensajes */
@@ -37,7 +37,6 @@ int caballo(int i, int fd, int n_caballos, int key) {
       printf("Fallo en la creacion de la cola de mensajes (caballos).\n");
       return ERROR;
    }
-
    /* Creacion de la mascara de señales */
    if (crear_mascara(&sset, SIGTERM) == -1) {
       printf("Apostador: Error al crear la mascara de senales.\n");
@@ -50,23 +49,20 @@ int caballo(int i, int fd, int n_caballos, int key) {
          printf("Error en el pause de los caballos.\n");
          return ERROR;
       }
-
       /* Comprobacion de la señal SIGTERM */
       if (senal_bloqueada(SIGTERM, &signvalue) == -1) {
          printf("Apostador: Error al comprobar si se ha detectado la senal.\n");
          return ERROR;
       }
-
       if (signvalue) {
          break;
       }
-
+      /* Lectura de las posiciones de la tuberia */
       posiciones = (int *) malloc(sizeof(int) * n_caballos);
       read(fd, posiciones, sizeof(int) * n_caballos);
-
+      /* Identificacion del recorrido ganador y perdedor */
       max = 0;
       min = INT_MAX;
-
       for(j = 0; j < n_caballos; j++){
          if(max < posiciones[j]){
             max = posiciones[j];
@@ -75,7 +71,6 @@ int caballo(int i, int fd, int n_caballos, int key) {
             min = posiciones[j];
          }
       }
-
       /* Generacion de la tirada */
       if (max) {
          if(posiciones[i] == max){
@@ -88,20 +83,19 @@ int caballo(int i, int fd, int n_caballos, int key) {
       } else {
          tirada = tirada_normal();
       }
-
+      /* Construccion del mensaje */
       mensaje = (caballo_principal *) malloc(sizeof(caballo_principal));
-
       mensaje->tipo = 1;
       mensaje->tirada = tirada;
 
-      /* Envio del mensaje con la tirada */
+      /* Envio del mensaje con la tirada al proceso principal */
       if(enviar_m(msqid, (void *) mensaje, sizeof(int)) == -1){
          printf("Error al mandar el mensaje desde los caballos al proceso principal.\n");
          free(posiciones);
          free(mensaje);
          return ERROR;
       }
-
+      /* Liberacion de recursos */
       free(posiciones);
       free(mensaje);
    }

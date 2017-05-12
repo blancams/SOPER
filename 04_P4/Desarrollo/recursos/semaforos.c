@@ -26,6 +26,7 @@
 int Inicializar_Semaforo(int semid, unsigned short *array) {
 	union semun arg;
 	arg.array = array;
+   /* Inicializacion */
 	if(semctl (semid, 0, SETALL, arg) == -1){
       return ERROR;
    }
@@ -33,6 +34,7 @@ int Inicializar_Semaforo(int semid, unsigned short *array) {
 }
 
 int Borrar_Semaforo(int semid) {
+   /* Borrado del semaforo */
    if(semctl(semid, 0, IPC_RMID) == -1){
       return ERROR;
    }
@@ -40,8 +42,9 @@ int Borrar_Semaforo(int semid) {
 }
 
 int Crear_Semaforo(int key, int size, int *semid) {
+   /* Generacion de la clave */
 	key_t k = ftok(FILEKEY, key);
-
+   /* Creacion del semaforo o acceso al mismo */
    int id = semget(k, size, IPC_CREAT | IPC_EXCL | SHM_R | SHM_W);
 
    if(id == -1 && errno == EEXIST) {
@@ -57,6 +60,7 @@ int Crear_Semaforo(int key, int size, int *semid) {
 
 int Down_Semaforo(int id, int num_sem, short undo) {
    struct sembuf down;
+   /* Asignacion */
    down.sem_num = num_sem;
    down.sem_op = -1;
    if(undo){
@@ -64,6 +68,7 @@ int Down_Semaforo(int id, int num_sem, short undo) {
    } else {
 		down.sem_flg = 0;
 	}
+   /* Down del semaforo */
    if(semop(id, &down, 1) == -1){
       return ERROR;
    }
@@ -72,6 +77,7 @@ int Down_Semaforo(int id, int num_sem, short undo) {
 
 int DownMultiple_Semaforo(int id, int size, short undo, int *active) {
    int i;
+   /* Down multiple */
    for(i = 0; i < size; i++) {
       if(Down_Semaforo(id, active[i], undo) == ERROR) {
          return ERROR;
@@ -82,6 +88,7 @@ int DownMultiple_Semaforo(int id, int size, short undo, int *active) {
 
 int Up_Semaforo(int id, int num_sem, short undo) {
    struct sembuf up;
+   /* Asignacion */
    up.sem_num = num_sem;
    up.sem_op = 1;
    if(undo) {
@@ -89,6 +96,7 @@ int Up_Semaforo(int id, int num_sem, short undo) {
    } else {
 		up.sem_flg = 0;
 	}
+   /* Up del semaforo */
    if(semop(id, &up, 1) == -1) {
       return ERROR;
    }
@@ -97,6 +105,7 @@ int Up_Semaforo(int id, int num_sem, short undo) {
 
 int UpMultiple_Semaforo(int id,int size, short undo, int *active) {
    int i;
+   /* Up multiple del semaforo */
    for(i = 0; i < size; i++) {
       if(Up_Semaforo(id, active[i], undo) == ERROR) {
          return ERROR;

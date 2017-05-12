@@ -20,19 +20,17 @@
 
 #include "mensajes.h"
 
-#define OK 2
-#define ERROR -1
-#define FILEKEY "/bin/cat"
+#define FILEKEY "/bin/cat"   /*!< Fichero para la generacion de la clave */
 
 int crear_cm(int *cmid, int key) {
    key_t clave;
    int msqid;
-
+   /* Generacion de la clave */
    clave = ftok(FILEKEY, key);
    if (clave == (key_t) -1) {
       return ERROR;
    }
-
+   /* Creacion o acceso a la cola de mensajes */
    msqid = msgget(clave, IPC_CREAT | IPC_EXCL | 0660);
    if (msqid == -1) {
       msqid = msgget(clave, 0660);
@@ -48,6 +46,7 @@ int crear_cm(int *cmid, int key) {
 }
 
 int enviar_m(int msid, void *mensaje, int size){
+   /* Envio de mensaje */
    if(msgsnd(msid, mensaje, size, 0) == -1){
       return ERROR;
    }
@@ -55,6 +54,7 @@ int enviar_m(int msid, void *mensaje, int size){
 }
 
 int recibir_m(int msid, void *mensaje, long tipo, int size){
+   /* Recepcion de mensaje */
    if(msgrcv(msid, mensaje, size, tipo, 0) == -1){
       printf("Error: %d - %s\n", errno, strerror(errno));
       return ERROR;
@@ -63,6 +63,7 @@ int recibir_m(int msid, void *mensaje, long tipo, int size){
 }
 
 int eliminar_cm(int msid) {
+   /* Eliminacion de la cola */
    msgctl(msid, IPC_RMID, (struct msqid_ds *) NULL);
 
    return OK;

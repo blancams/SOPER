@@ -23,12 +23,12 @@
 int crear_shm(int size, int *shmid, int key) {
    key_t k;
    int id;
-
+   /* Generacion de la clave */
    k = ftok(FILEKEY, key);
    if (k == (key_t) -1) {
       return ERROR;
    }
-
+   /* Creacion o acceso a la region de memoria compartida */
    id = shmget(k, size, IPC_CREAT | IPC_EXCL | SHM_R | SHM_W);
    if (id == -1) {
       id = shmget(k, size, SHM_R | SHM_W);
@@ -45,12 +45,13 @@ int crear_shm(int size, int *shmid, int key) {
 }
 
 void* acceder_shm(int shmid) {
+   /* Acceso a la region */
    return shmat(shmid, NULL, 0);
 }
 
 int salir_shm(void* addr) {
    int ret;
-
+   /* Desvinculacion de la region */
    ret = shmdt(addr);
 
    if (ret == 0) {
@@ -61,6 +62,7 @@ int salir_shm(void* addr) {
 }
 
 int eliminar_shm(int shmid) {
+   /* Marca para eliminar la region de memoria compartida */
    shmctl(shmid, IPC_RMID, (struct shmid_ds*) NULL);
 
    return OK;

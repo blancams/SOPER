@@ -32,35 +32,31 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int n_apo
    sigset_t sset;
    apuestas_total *apuestas;
 
-   /* Acceso a las regiones de memoria compartida */
+   /* Acceso a las regiones de memoria compartida de las apuestas */
    if ((apuestas = (apuestas_total *) acceder_shm(shmid_apuestas[0])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) apuestas);
       libera_recursos_monitor(NULL, NULL, n_apostadores);
       return ERROR;
    }
-
    if ((apuestas->apostado = (double *) acceder_shm(shmid_apuestas[1])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) apuestas->apostado);
       libera_recursos_monitor(NULL, NULL, n_apostadores);
       return ERROR;
    }
-
    if ((apuestas->ganancia = (double **) acceder_shm(shmid_apuestas[2])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) apuestas->ganancia);
       libera_recursos_monitor(NULL, NULL, n_apostadores);
       return ERROR;
    }
-
    if ((apuestas->cotizacion = (double *) acceder_shm(shmid_apuestas[3])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) apuestas->cotizacion);
       libera_recursos_monitor(NULL, NULL, n_apostadores);
       return ERROR;
    }
-
    for (j = 4; j < n_apostadores + 4; j++) {
       if ((apuestas->ganancia[j-4] = (double *) acceder_shm(shmid_apuestas[j])) == (void *) -1) {
          printf("Error al acceder a memoria compartida en gestor.\n");
@@ -69,7 +65,7 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int n_apo
          return ERROR;
       }
    }
-
+   /* Acceso a la memoria compartida de las posiciones de los caballos */
    if ((posiciones = (int *) acceder_shm(shmid_posiciones)) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) posiciones);
@@ -90,13 +86,7 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int n_apo
       libera_recursos_monitor(apuestas, posiciones, n_apostadores);
       return ERROR;
    }
-/*
-   if (anadir_mascara(SIGUSR1) == -1) {
-      printf("Apostador: Error al crear la mascara de senales.\n");
-      libera_recursos_monitor(apuestas, posiciones, n_apostadores);
-      return ERROR;
-   }
-*/
+   /* Impresion de los datos antes de comenzar la carrera */
    for (j = 0; j < 15; j++) {
       sprintf(estado, "Estado de la carrera: faltan %d segundos.", 15-j);
 
@@ -116,36 +106,29 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int n_apo
 
       usleep(1000000);
    }
-/*
-   if (quitar_mascara(SIGUSR1) == -1) {
-      printf("Apostador: Error al crear la mascara de senales.\n");
-      libera_recursos_monitor(apuestas, posiciones, n_apostadores);
-      return ERROR;
-   }
-*/
    /* Impresion de los datos de la carrera comenzada */
    sprintf(estado, "Estado de la carrera: comenzada.");
 
    while(1) {
+      /* Espera a la señalizacion */
       if(pause() != -1){
          printf("Fallo en pause de monitor 3.\n");
          libera_recursos_monitor(apuestas, posiciones, n_apostadores);
          return ERROR;
       }
-
+      /* Comprobacion de recepcion de SIGTERM */
       if (senal_bloqueada(SIGTERM, &signvalue) == -1) {
          printf("Apostador: Error al comprobar si se ha detectado la senal.\n");
          libera_recursos_monitor(apuestas, posiciones, n_apostadores);
          return ERROR;
       }
-
       if (signvalue) {
          break;
       }
 
       imprimir_carrera(estado, n_caballos, posiciones, apuestas->cotizacion);
    }
-
+   /* Impresion de la carrera finalizada */
    printf("#################################\n");
    printf("       CARRERA FINALIZADA        \n");
    printf("#################################\n");
@@ -156,7 +139,7 @@ int monitor(int *shmid_apuestas, int shmid_posiciones, int n_caballos, int n_apo
    }
 
    imprimir_finalizada(n_caballos, n_apostadores, posiciones, apuestas->ganancia);
-
+   /* Liberacion de recursos */
    libera_recursos_monitor(apuestas, posiciones, n_apostadores);
 
    return OK;
@@ -168,10 +151,12 @@ void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cot
    printf("#################################\n");
    printf("%s\n", estado);
    if (!strcmp("Estado de la carrera: comenzada.", estado)) {
+      /* Si la carrera ya ha comenzado imprimimos posiciones de los caballos */
       for (i = 0; i < n_caballos; i++) {
          printf("Posición del caballo %d: %d\n", i+1, posiciones[i]);
       }
    } else {
+      /* Si la carrera no ha comenzado imprimimos cotizaciones de los caballos */
       for (i = 0; i < n_caballos; i++) {
          printf("Cotización del caballo %d: %lf\n", i+1, cotizaciones[i]);
       }
@@ -185,6 +170,7 @@ void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cot
    int max1, max2, max3, ind1, ind2, ind3, indap;
    double benef[n_apostadores], max;
 
+   /* Calculo de las tres primeras posiciones */
    for (i = 0, max1 = 0, max2 = 0, max3 = 0; i < n_caballos; i++) {
       if (max3 < posiciones[i]) {
          max3 = posiciones[i];
@@ -203,7 +189,7 @@ void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cot
          }
       }
    }
-
+   /* Calculo de los maximos beneficios */
    for (i = 0, max = INT_MIN; i < n_apostadores; i++) {
       benef[i] = 0;
       for (j = 0; j < n_caballos; j++) {
@@ -219,7 +205,7 @@ void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cot
          indap = i;
       }
    }
-
+   /* Impresion de los resultados de la carrera */
    printf("#################################\n");
    printf("Primer puesto: Caballo %d - %d\n", ind1+1, max1);
    printf("Segundo puesto: Caballo %d - %d\n", ind2+1, max2);
@@ -248,36 +234,31 @@ void imprimir_carrera(char *estado, int n_caballos, int *posiciones, double *cot
 
 void libera_recursos_monitor(apuestas_total *apuestas, int *posiciones, int n_apostadores) {
    int i;
-
+   /* Liberacion de las regiones de memoria compartida */
    if (apuestas != NULL) {
       if (salir_shm((void*) apuestas->apostado) == -1) {
          printf("Error al salir de memoria compartida en monitor.\n");
          return;
       }
-
       if (salir_shm((void*) apuestas->cotizacion) == -1) {
          printf("Error al salir de memoria compartida en monitor.\n");
          return;
       }
-
       for (i = 0; i < n_apostadores; i++) {
          if (salir_shm((void*) apuestas->ganancia[i]) == -1) {
             printf("Error al salir de memoria compartida en monitor.\n");
             return;
          }
       }
-
       if (salir_shm((void*) apuestas->ganancia) == -1) {
          printf("Error al salir de memoria compartida en monitor.\n");
          return;
       }
-
       if (salir_shm((void*) apuestas) == -1) {
          printf("Error al salir de memoria compartida en monitor.\n");
          return;
       }
    }
-
    if (posiciones != NULL) {
       if (salir_shm((void*) posiciones) == -1) {
          printf("Error al salir de memoria compartida en monitor.\n");

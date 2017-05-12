@@ -18,7 +18,7 @@
 
 int crear_hilo(pthread_t *hilo, void*(*funcion)(void*), void* args) {
    int ret;
-
+   /* Creaciond el hilo */
    ret = pthread_create(hilo, NULL, funcion, args);
 
    if (ret == 0) {
@@ -30,7 +30,7 @@ int crear_hilo(pthread_t *hilo, void*(*funcion)(void*), void* args) {
 
 int unir_hilo(pthread_t hilo) {
    int ret;
-
+   /* Union del hilo a la ejecucion del programa */
    ret = pthread_join(hilo, NULL);
 
    if (ret == 0) {
@@ -42,7 +42,7 @@ int unir_hilo(pthread_t hilo) {
 
 int cancelar_hilo(pthread_t hilo) {
    int ret;
-
+   /* Cancelacion del hilo */
    ret = pthread_cancel(hilo);
 
    if (ret == 0) {
@@ -53,6 +53,7 @@ int cancelar_hilo(pthread_t hilo) {
 }
 
 int impedir_cancelar() {
+   /* Impedimos cancelar el hilo */
    if (pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL)) {
       return ERROR;
    } else {
@@ -61,6 +62,7 @@ int impedir_cancelar() {
 }
 
 int permitir_cancelar() {
+   /* Permitimos cancelar el hilo */
    if (pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL)) {
       return ERROR;
    } else {
@@ -69,5 +71,6 @@ int permitir_cancelar() {
 }
 
 void salir_hilo() {
+   /* Salida del hilo */
    pthread_exit(NULL);
 }

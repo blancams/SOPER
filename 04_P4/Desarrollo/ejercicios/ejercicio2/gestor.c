@@ -36,35 +36,31 @@ int gestor(int *shmid_apuestas, int semid, int n_apostadores, int n_caballos,
    /* Reserva de memoria */
    hilos = (pthread_t *) malloc(sizeof(pthread_t) * n_ventanillas);
 
-   /* Acceso a las regiones de memoria compartida */
+   /* Acceso a las regiones de memoria compartida de las apuestas */
    if ((apuestas = (apuestas_total *) acceder_shm(shmid_apuestas[0])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) apuestas);
       libera_recursos_gestor(hilos);
       return ERROR;
    }
-
    if ((apuestas->apostado = (double *) acceder_shm(shmid_apuestas[1])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) apuestas->apostado);
       libera_recursos_gestor(hilos);
       return ERROR;
    }
-
    if ((apuestas->ganancia = (double **) acceder_shm(shmid_apuestas[2])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) apuestas->ganancia);
       libera_recursos_gestor(hilos);
       return ERROR;
    }
-
    if ((apuestas->cotizacion = (double *) acceder_shm(shmid_apuestas[3])) == (void *) -1) {
       printf("Error al acceder a memoria compartida en gestor.\n");
       salir_shm((void *) apuestas->cotizacion);
       libera_recursos_gestor(hilos);
       return ERROR;
    }
-
    for (j = 4; j < n_apostadores + 4; j++) {
       if ((apuestas->ganancia[j-4] = (double *) acceder_shm(shmid_apuestas[j])) == (void *) -1) {
          printf("Error al acceder a memoria compartida en gestor.\n");
@@ -164,7 +160,7 @@ void *ventanilla(void *arg) {
          printf("Error al recibir la informacion sobre las tiradas de los caballos.\n");
          salir_hilo();
       }
-
+      /* Impedimos cancelar el hilo en mitad de su ejecucionn */
       if (impedir_cancelar() == -1) {
          printf("Error al deshabilitar cancelacion de hilo.\n");
          salir_hilo();
@@ -197,7 +193,7 @@ void *ventanilla(void *arg) {
          printf("Error al ejecutar función Up_Semaforo.\n");
          salir_hilo();
       }
-
+      /* Permitimos cancelar el hilo */
       if (permitir_cancelar() == -1) {
          printf("Error al habilitar cancelacion de hilo.\n");
          salir_hilo();
