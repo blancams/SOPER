@@ -36,6 +36,30 @@ int crear_mascara(sigset_t *mascara, int senal) {
    }
 }
 
+int anadir_mascara(int senal) {
+   sigset_t sset;
+
+   if (sigaddset(&sset, senal)) {
+      return ERROR;
+   } else if (sigprocmask(SIG_BLOCK, &sset, NULL)) {
+      return ERROR;
+   } else {
+      return OK;
+   }
+}
+
+int quitar_mascara(int senal) {
+   sigset_t sset;
+
+   if (sigaddset(&sset, senal)) {
+      return ERROR;
+   } else if (sigprocmask(SIG_UNBLOCK, &sset, NULL)) {
+      return ERROR;
+   } else {
+      return OK;
+   }
+}
+
 int senal_bloqueada(int senal, int *value) {
    int ret;
    sigset_t bset;

@@ -27,33 +27,33 @@ int caballo(int i, int fd, int n_caballos, int key) {
    int max, min, j, tirada, msqid, signvalue;
    int *posiciones;
    sigset_t sset;
-   caballo_principal mensaje;
+   caballo_principal *mensaje;
 
    srand((unsigned) time(NULL)*getpid());
 
    /* Acceso a la cola de mensajes */
    if(crear_cm(&msqid, key)== -1){
       printf("Fallo en la creacion de la cola de mensajes (caballos).\n");
-      exit(ERROR);
+      return ERROR;
    }
 
    /* Creacion de la mascara de señales */
    if (crear_mascara(&sset, SIGTERM) == -1) {
       printf("Apostador: Error al crear la mascara de senales.\n");
-      exit(ERROR);
+      return ERROR;
    }
 
    while(1) {
       /* Espera a la señalizacion del proceso principal */
       if(pause() != -1){
          printf("Error en el pause de los caballos.\n");
-         exit(ERROR);
+         return ERROR;
       }
 
       /* Comprobacion de la señal SIGTERM */
       if (senal_bloqueada(SIGTERM, &signvalue) == -1) {
          printf("Apostador: Error al comprobar si se ha detectado la senal.\n");
-         exit(ERROR);
+         return ERROR;
       }
 
       if (signvalue) {
@@ -63,7 +63,7 @@ int caballo(int i, int fd, int n_caballos, int key) {
       posiciones = (int *) malloc(sizeof(int) * n_caballos);
 
       read(fd, posiciones, sizeof(int) * n_caballos);
-      
+
       max = 0;
       min = INT_MAX;
 
@@ -89,18 +89,24 @@ int caballo(int i, int fd, int n_caballos, int key) {
          tirada = tirada_normal();
       }
 
-      mensaje.tipo = 1;
-      mensaje.tirada = tirada;
+      mensaje = (caballo_principal *) malloc(sizeof(caballo_principal));
 
+      mensaje->tipo = 1;
+      mensaje->tirada = tirada;
 
       /* Envio del mensaje con la tirada */
-      if(enviar_m(msqid, (void *) &mensaje, sizeof(caballo_principal) - sizeof(long)) == -1){
+      if(enviar_m(msqid, (void *) mensaje, sizeof(int)) == -1){
          printf("Error al mandar el mensaje desde los caballos al proceso principal.\n");
-         exit(ERROR);
+         free(posiciones);
+         free(mensaje);
+         return ERROR;
       }
+
+      free(posiciones);
+      free(mensaje);
    }
 
-   exit(0);
+   return OK;
 
 }
 

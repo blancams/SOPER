@@ -15,6 +15,13 @@
 
 #define OK 2						/*!< Valor para correcto retorno de funciones */
 #define ERROR -1					/*!< Valor para incorrecto retorno de funciones */
+#define NOM_CHAR 20
+
+typedef struct _Info_AG{
+   char nombre[NOM_CHAR];
+   int caballo;
+   double apuesta;
+} info_ag;
 
 /**
  * @brief Estructura para la comunicacion del generador de apuestas al gestor.
@@ -24,9 +31,7 @@
  */
 typedef struct _Apostador_Gestor{
    long tipo;
-   char nombre[20];
-   int caballo;
-   double apuesta;
+   info_ag ap;
 } apostador_gestor;
 
 /**

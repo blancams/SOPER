@@ -16,6 +16,7 @@
 #include <sys/sem.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <string.h>
 #include <sys/shm.h>
 
 #include "semaforos.h"
@@ -60,7 +61,9 @@ int Down_Semaforo(int id, int num_sem, short undo) {
    down.sem_op = -1;
    if(undo){
       down.sem_flg = SEM_UNDO;
-   }
+   } else {
+		down.sem_flg = 0;
+	}
    if(semop(id, &down, 1) == -1){
       return ERROR;
    }
@@ -83,7 +86,9 @@ int Up_Semaforo(int id, int num_sem, short undo) {
    up.sem_op = 1;
    if(undo) {
       up.sem_flg = SEM_UNDO;
-   }
+   } else {
+		up.sem_flg = 0;
+	}
    if(semop(id, &up, 1) == -1) {
       return ERROR;
    }

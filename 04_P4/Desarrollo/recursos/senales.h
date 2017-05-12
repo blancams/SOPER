@@ -34,6 +34,10 @@ int enviar_senal(pid_t proceso, int senal);
  */
 int crear_mascara(sigset_t *mascara, int senal);
 
+int anadir_mascara(int senal);
+
+int quitar_mascara(int senal);
+
 /**
  * @brief Indica si se ha recibido alguna señal bloqueada.
  *
