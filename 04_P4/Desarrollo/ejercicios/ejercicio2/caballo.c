@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <time.h>
 #include <limits.h>
+#include <errno.h>
 
 #include "../../recursos/mensajes.h"
 #include "../../recursos/senales.h"
@@ -63,7 +64,10 @@ int caballo(int i, int fd, int n_caballos, int key) {
       }
 
       /* Lectura de las posiciones */
-      read(fd, posiciones, sizeof(int) * n_caballos);
+      posiciones = (int *) malloc(sizeof(int) * n_caballos);
+      if(read(fd, posiciones, sizeof(int) * n_caballos) == -1){
+         printf("%s\n", strerror(errno));
+      }
       max = 0;
       min = INT_MAX;
 

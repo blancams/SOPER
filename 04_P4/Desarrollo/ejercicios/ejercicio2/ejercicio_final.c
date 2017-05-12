@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <errno.h>
 
 #include "../../recursos/senales.h"
 #include "../../recursos/memcomp.h"
@@ -249,19 +250,19 @@ int main(int argc, char *argv[]){
          exit(EXIT_FAILURE);
 
       } else if(!pid){
-
+         /*
          if (i > 2) {
             close(fd[1]);
          }
-
+         */
          break;
 
       } else {
 
          pid_procesos[i] = pid;
          if (i > 2) {
-            tuberias[i-3] = fd[0];
-            tuberias[i-2] = fd[1];
+            tuberias[2*i-6] = fd[0];
+            tuberias[2*i-5] = fd[1];
          }
 
       }
@@ -311,7 +312,7 @@ int main(int argc, char *argv[]){
          posiciones[j] = 0;
       }
 
-      for (j = 0; j < n_caballos*2; j++) {
+      for (j = 0; j < n_caballos*2; j = j + 2) {
          close(tuberias[j]);
       }
 
@@ -371,7 +372,9 @@ int main(int argc, char *argv[]){
          /* Escribimos para cada caballo? No tiene sentido esto no ?  No me acuerdo de tuberias sorry */
          for (j = 1; j < n_caballos*2; j = j + 2) {
             printf("Antes de escribir en tuberia fd[%d] = %d\n", j, tuberias[j]);
-            write(tuberias[j], posiciones, sizeof(int) * n_caballos);
+            if(write(tuberias[j], posiciones, sizeof(int) * n_caballos) == -1){
+               printf("%s\n", strerror(errno));
+            }
             printf("Despues de escribir en tuberia fd[%d] = %d\n", j, tuberias[j]);
          }
 
@@ -438,7 +441,7 @@ int main(int argc, char *argv[]){
    } else {
 
       printf("Crea caballo %d, con tubería %d y %d.\n", i-3, fd[0], fd[1]);
-
+      close(fd[1]);
       if (caballo(i-3, fd[0], n_caballos, N_KEY_CABALLOS) == -1){
          printf("Fallo en caballos %d.\n", i);
          libera_recursos(shmid_apuestas, &shmid_posiciones, &semid, &msqid_apuestas, &msqid_caballos, pid_procesos, tuberias, n_caballos+3);
